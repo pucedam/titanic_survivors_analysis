@@ -1,1 +1,1 @@
-# suicides_rates_analysis
+# Práctica 2: Limpieza y análisis de datos
