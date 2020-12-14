@@ -17,8 +17,10 @@ De este modo, este estudio es interesante dado que examinaremos qué posibles fa
 
 Las variables de las que disponemos, para cada pasajero, son:
 
+- **PassengerId**: Identificador artifical del pasajero.
 - **survival**: Si sobrevivió (1) o no (0).
-- **pclass**: Clase del pasaje. 
+- **Pclass**: Clase del pasaje. 
+- **Name**: Nombre del pasajero.
 - **sex**: Sexo del viajero.
 - **Age**: Edad, en años.
 - **sibsp**: Número de hermanos o esposas a bordo del Titanic
@@ -27,4 +29,25 @@ Las variables de las que disponemos, para cada pasajero, son:
 - **fare**: Tarifa del pasaje
 - **cabin**: Número de camarote
 - **embarked**: Puerto desde el que embarcó el pasajero. Las posibles opciones son: Cherbourg(C), Queenstown(Q) o Southampton(s).
+
+A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
+```{r}
+
+
+ds <- read.csv(file = "train.csv", header=TRUE)
+
+str(ds)
+
+```
+
+Los atributos PassengerId y Name no serán objeto de análisis. Para el resto, tenemos las variables cuantitativas Age, SibSp, Parch y Fare, todas correctamente tratadas como int o num. 
+
+También estan las variables cualitativas Ticket y Cabin, cargadas como cadena de caracteres. Nótese que Cabin es susceptible de ser dividida en letra y número.
+
+Tenemos otras variables cuantitativas que han sido interpretadas como campos numéricos. Se describe a continuación la transformación que haremos:
+
+- Survived: Lo transformaremos a TRUE(1) y FALSE(0).
+- Pclass: Variable categórica susceptible de ser convertida en factor: First, Second, Third.
+- Sex: Varibale categórica sobre la que podemos aplicar factor.
+- Embarked: Factor con 3 posibles valores.
 
