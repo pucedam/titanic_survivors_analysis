@@ -7,6 +7,13 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(gridExtra)
+library(pROC)
+
 ```
 
 # 1. Descripción del dataset
@@ -18,7 +25,7 @@ De este modo, este estudio es interesante dado que examinaremos qué posibles fa
 Las variables de las que disponemos, para cada pasajero, son:
 
 - **PassengerId**: Identificador artifical del pasajero.
-- **survival**: Si sobrevivió (1) o no (0).
+- **survived**: Si sobrevivió (1) o no (0).
 - **Pclass**: Clase del pasaje. 
 - **Name**: Nombre del pasajero.
 - **sex**: Sexo del viajero.
@@ -42,12 +49,43 @@ str(ds)
 
 Los atributos PassengerId y Name no serán objeto de análisis. Para el resto, tenemos las variables cuantitativas Age, SibSp, Parch y Fare, todas correctamente tratadas como int o num. 
 
-También estan las variables cualitativas Ticket y Cabin, cargadas como cadena de caracteres. Nótese que Cabin es susceptible de ser dividida en letra y número.
+También estan las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Nótese que Cabin es susceptible de ser dividida en letra y número.
 
-Tenemos otras variables cuantitativas que han sido interpretadas como campos numéricos. Se describe a continuación la transformación que haremos:
+Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
+- Transformamos el campo dicotómico Survived a Yes(1) y Not(0).
+- Transformamos el campo cualitativo categórico Embarked a un factor con 3 posibles valores, cada uno con el nombre del puerto.
 
-- Survived: Lo transformaremos a TRUE(1) y FALSE(0).
-- Pclass: Variable categórica susceptible de ser convertida en factor: First, Second, Third.
-- Sex: Varibale categórica sobre la que podemos aplicar factor.
-- Embarked: Factor con 3 posibles valores.
 
+```{r}
+
+ds$Survived <- factor(ds$Survived, levels=sort(c(0,1)), labels = c("Not", "Yes"))
+ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
+
+
+str(ds)
+
+```
+
+A continuación analizamos cada uno de los distintos atributos:
+
+```{r}
+
+summary(ds)
+
+#Visualización de variables cuantitativas
+
+#Age
+g1 <- ggplot(ds, aes(x=Age)) + geom_boxplot()
+
+g2 <- ggplot(ds, aes(x=Age)) + geom_histogram(bins=20)
+
+
+
+```
+
+
+```{r}
+
+grid.arrange(g1,g2,nrow=2)
+
+```
