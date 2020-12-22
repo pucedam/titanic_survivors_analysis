@@ -239,4 +239,93 @@ TODO: En el ejercicio 1 se ha pintado  el campo Age y el campo Embarked ya sin e
 TODO: Explicar que hay valores extremos pero no podemos suponer que sean incorrectos (por ejemplo gente que tiene 8 hermanos o un billete que cuesta 500$). Poner ejemplos...
 
 
+# 4. Análisis de los datos
 
+## 4.1 Selección de los grupos de datos que se quieen analizar / comparar.
+
+Posibles grupos que puedan ser interesantes a la hora de averiguar si la probabilidad de sobrevivir era mucho más alta según el grupo.
+
+```{r}
+  
+# Por clase
+
+# Gente que viajaba sola vs gente con familia
+
+# Por sexo
+
+males_passengers <- ds[ds$Sex == "male",] 
+females_passengers <- ds[ds$Sex == "female",]
+
+
+# Por edad, niños por debajo de los 16 años
+
+children_passengers <- ds[ds$Age <= 16,] 
+not_children__passengers <- ds[ds$Age > 16,] 
+  
+
+```
+
+## 4.2. Comprobación de la normalidad y homogeneidad de la varianza
+
+```{r}
+
+#Normalidad para el campo Age
+ks.test(ds$Age, pnorm, mean(ds$Age), sd(ds$Age))
+
+shapiro.test(ds$Age)
+
+
+```
+
+Nos dan que la edad no sigue una distribucion normal, pero por el teorema del limite central.... podemos suponerlo.
+
+```{r}
+
+library(car)
+
+levtest<- function(x, y) {
+  leveneTest(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
+                               data.frame(dv=y, gr='gr2')), center='mean')
+}
+
+flignertest<- function(x, y) {
+  fligner.test(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
+                               data.frame(dv=y, gr='gr2')))
+}
+
+levtest(children_passengers$Age, not_children__passengers$Age)
+
+
+flignertest(children_passengers$Age, not_children__passengers$Age)
+
+
+var.test(children_passengers$Age, not_children__passengers$Age)
+
+
+```
+
+
+#4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos
+Ambos grupos no tienen la misma varianza.
+
+```{r}
+
+  #Hay correlacion
+
+  wilcox.test(Age ~ Survived, data = ds)
+
+  wilcox.test(Age ~ Survived, data = children_passengers)
+  wilcox.test(Age ~ Survived, data = not_children__passengers)
+  
+  
+  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "two.sided")
+  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "greater")
+  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "less")
+
+  summary(children_passengers)
+  summary(not_children__passengers)
+  
+
+```
+
+Los menores de 16 años tuvieron mucha más oportunidad de salvarse que los mayores de 16 años. La edad es un factor determinante. Pintarlo en el apartado 5.
