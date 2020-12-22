@@ -25,18 +25,21 @@ De este modo, este estudio es interesante dado que examinaremos qué posibles fa
 Las variables de las que disponemos, para cada pasajero, son:
 
 - **PassengerId**: Identificador artifical del pasajero.
-- **survived**: Si sobrevivió (1) o no (0).
+- **Survived**: Si sobrevivió (1) o no (0).
 - **Pclass**: Clase del pasaje. 
 - **Name**: Nombre del pasajero.
 - **sex**: Sexo del viajero.
 - **Age**: Edad, en años.
-- **sibsp**: Número de hermanos o esposas a bordo del Titanic
-- **parch**: Número de padres / hijos a bordo del Titanic
+- **SibSp**: Número de hermanos o esposas a bordo del Titanic
+- **Parch**: Número de padres / hijos a bordo del Titanic
 - **ticket**: Número de ticket
 - **fare**: Tarifa del pasaje
 - **cabin**: Número de camarote
 - **embarked**: Puerto desde el que embarcó el pasajero. Las posibles opciones son: Cherbourg(C), Queenstown(Q) o Southampton(s).
 
+# 2. Integración y selección de los datos de interés a analizar.
+
+## 2.1 Carga de los datos y selección
 A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
 ```{r}
 
@@ -47,9 +50,11 @@ str(ds)
 
 ```
 
-Los atributos PassengerId y Name no serán objeto de análisis. Para el resto, tenemos las variables cuantitativas Age, SibSp, Parch y Fare, todas correctamente tratadas como int o num. 
+__Los atributos PassengerId y Name no serán objeto de análisis__. Para el resto, tenemos las variables cuantitativas Age, SibSp, Parch y Fare, todas correctamente tratadas como int o num. 
 
 También estan las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Nótese que Cabin es susceptible de ser dividida en letra y número.
+
+## 2.2 Transformación de los datos
 
 Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
 - Transformamos el campo dicotómico Survived a Yes(1) y Not(0).
@@ -71,14 +76,52 @@ A continuación analizamos cada uno de los distintos atributos:
 ```{r}
 
 summary(ds)
+```
 
+Vemos que los campos Age y Embarked tienen 177 y 2 valores nulos, respectivamente. Como no tiene sentido interpretarlos como 0 años o ningún puerto, sustituimos estos campos por la mediana para que afecten en la medida de lo posible al análisis.
+
+```{r}
+
+age_median <- median(ds$Age, na.rm = TRUE)
+
+ds[, 'Age'][is.na(ds[,'Age'])] <- age_median
+
+embarked_most_frequent <-  levels(ds$Embarked)[which.max(ds$Embarked)]
+
+ds[, 'Embarked'][is.na(ds[,'Embarked'])] <- embarked_most_frequent
+
+summary(ds)
+
+
+```
+
+
+```{r}
 #Visualización de variables cuantitativas
 
 #Age
-g1 <- ggplot(ds, aes(x=Age)) + geom_boxplot()
+gAge1 <- ggplot(ds, aes(x=Age)) + geom_boxplot()
 
-g2 <- ggplot(ds, aes(x=Age)) + geom_histogram(bins=20)
+gAge2 <- ggplot(ds, aes(x=Age)) + geom_histogram(bins=20)
 
+#SibSp
+
+gSibSp1 <- ggplot(ds, aes(x=SibSp)) + geom_boxplot()
+
+gSibSp2 <- ggplot(ds, aes(x=SibSp)) + geom_histogram(bins=20)
+
+#Parch
+
+gParch1 <- ggplot(ds, aes(x=Parch)) + geom_boxplot()
+
+gParch2 <- ggplot(ds, aes(x=Parch)) + geom_histogram(bins=20)
+
+
+#Fare
+
+gFare1 <- ggplot(ds, aes(x=Fare)) + geom_boxplot()
+
+gFare2 <- ggplot(ds, aes(x=Fare)) + geom_histogram(bins=20)
 
 
 ```
@@ -86,6 +129,114 @@ g2 <- ggplot(ds, aes(x=Age)) + geom_histogram(bins=20)
 
 ```{r}
 
-grid.arrange(g1,g2,nrow=2)
+grid.arrange(gAge1,gAge2,nrow=1)
+
+grid.arrange(gSibSp1,gSibSp2,nrow=1)
+
+grid.arrange(gParch1,gParch2,nrow=1)
+
+grid.arrange(gFare1,gFare2,nrow=1)
 
 ```
+
+```{r}
+
+#Visualizacion de variables cuantitativas
+
+#Survived
+sumSurvived <- summarize( group_by(ds, Survived), n=length(Survived), Fare=mean(Fare))
+
+gSurvived1 <- ggplot( sumSurvived, aes(x="", y=n, fill=Survived)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("Survived")
+
+#PClass and Survived
+sumPClass <- summarize( group_by(ds, Pclass), n=length(Pclass), Survived=mean(Survived))
+
+gPClass1 <- ggplot( sumPClass, aes(x="", y=n, fill=Pclass)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("PClass")
+
+gPClass2 <- ds %>%
+  group_by(Survived, Pclass) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Survived),
+      y = x,
+      fill = factor(Pclass)
+      ), position = "stack")
+
+#Sex and Survived
+sumSex <- summarize( group_by(ds, Sex), n=length(Sex), Survived=mean(Survived))
+
+gSex1 <- ggplot( sumSex, aes(x="", y=n, fill=Sex)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("Sex")
+
+gSex2 <- ds %>%
+  group_by(Survived, Sex) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Survived),
+      y = x,
+      fill = factor(Sex)
+      ), position = "stack")
+
+#Embarked and Survived
+sumEmbarked <- summarize( group_by(ds, Embarked), n=length(Embarked))
+
+gEmbarked1 <- ggplot( sumEmbarked, aes(x="", y=n, fill=Embarked)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("Embarked")
+
+
+gEmbarked2 <- ds %>%
+  group_by(Survived, Embarked) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Embarked),
+      y = x,
+      fill = factor(Survived)
+      ), position = "stack")
+
+```
+
+```{r}
+
+grid.arrange(gSurvived1, nrow=2)
+
+grid.arrange(gPClass1,gPClass2, nrow=1)
+
+grid.arrange(gSex1, gSex2, nrow=1)
+
+grid.arrange(gEmbarked1, gEmbarked2, nrow=1)
+
+```
+
+#2.3 Descipción estadística descriptiva
+
+TODO: Describir cómo se distribuyen los datos y como podría saltar a la vista correlaciones. Da idea del ejercicio 4.
+
+#3. Limpieza de datos
+
+## 3.1  Elementos vacíos
+
+TODO: En el ejercicio 1 se ha pintado  el campo Age y el campo Embarked ya sin elementos vacíos. Traer aqui y pintar de nuevo, con un summary para demostrar que han desaparecido.
+
+
+## 3.2 Identificación y tratamiento de valores extremos.
+
+
+TODO: Explicar que hay valores extremos pero no podemos suponer que sean incorrectos (por ejemplo gente que tiene 8 hermanos o un billete que cuesta 500$). Poner ejemplos...
+
+
+
