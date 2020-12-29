@@ -20,7 +20,7 @@ library(pROC)
 
 Durante esta práctica vamos a tratar el _dataset_ base de la competición [**Titanic - Machine Learning from Disaster**](https://www.kaggle.com/c/titanic/overview). En este conjunto de datos se nos presenta, para cada pasajero del tan famoso trasatlántico, sus datos personales más importantes, así como otros relacionados con su embarque en el Titanic, y si finalmente sobrevivieron al naufragio del mismo.
 
-De este modo, este estudio es interesante dado que examinaremos qué posibles factores pudieron influir en la supervivencia de los pasajeros. Así, podremos, por ejemplo, ver si solamente la clase del billete el género (mujeres) y la edad (niños) condicionaron que un viajero se salvase tal y como hemos visto en la gran pantalla o bien hubiera habido otros factores que pudieran haber determinado la supervivencia del pasajero, como el número de billete.
+De este modo, este estudio es interesante dado que examinaremos qué posibles factores pudieron influir en la supervivencia de los pasajeros. Así, podremos, por ejemplo, ver si solamente la clase del billete, el género (mujeres) y la edad (niños) condicionaron que un viajero se salvase tal y como hemos visto en la gran pantalla o bien hubiera habido otros factores que pudieran haber determinado la supervivencia del pasajero, como el número de billete.
 
 Las variables de las que disponemos, para cada pasajero, son:
 
@@ -39,37 +39,141 @@ Las variables de las que disponemos, para cada pasajero, son:
 
 # 2. Integración y selección de los datos de interés a analizar.
 
-## 2.1 Carga de los datos y selección
+Los datos a procesar provienen de una única fuente, por ello, no es necesario realizar la fase de integración o
+fusionado de los datos. En este apartado, primero se cargarán los datos y se hará una exploración inicial de los mismos para
+tener una idea más clara de los mismos y, posteriormente, se procede a seleccionar los datos de interés y a generar nuevas
+características que puedan resultar interesantes para el análisis posterior.
+
+## 2.1 Exploración de los datos (screening)
+
 A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
-```{r}
 
-
-ds <- read.csv(file = "train.csv", header=TRUE)
-
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ds <- read.csv(file = "train.csv", header=TRUE, stringsAsFactors=FALSE)
 str(ds)
-
 ```
-
-__Los atributos PassengerId y Name no serán objeto de análisis__. Para el resto, tenemos las variables cuantitativas Age, SibSp, Parch y Fare, todas correctamente tratadas como int o num. 
-
-También estan las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Nótese que Cabin es susceptible de ser dividida en letra y número.
-
-## 2.2 Transformación de los datos
+Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres.
 
 Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
 - Transformamos el campo dicotómico Survived a Yes(1) y Not(0).
 - Transformamos el campo cualitativo categórico Embarked a un factor con 3 posibles valores, cada uno con el nombre del puerto.
+- Transformamos el campo dicotómico Sex en vez de cadena.
 
-
-```{r}
-
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 ds$Survived <- factor(ds$Survived, levels=sort(c(0,1)), labels = c("Not", "Yes"))
 ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
-
-
+ds$Sex <- factor(ds$Sex)
 str(ds)
-
 ```
+
+Para hacernos una idea de las características, vamos a mostrar las estadístcas básicas:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(ds)
+```
+La información más relevante es:
+
+- **Survived**: Hay más gente que falleció que sobrevivió.
+- **Pclass**: Lo más común es tercera clases (Median).
+- **Sex**: En el barco viajaban el doble de hombres que de mujeres.
+- **age**: especifica la edad en años. Podemos ver que el mínimo es 0.42 años, así que se contemplan bebés.
+La persona más anciana tenía 80 años y la media de edad estaba en torno a los 30 años.
+- **SibSp**: Lo más común es ir sin hermanos ni mujer.
+- **Parch**: Es menos común todavía ir con descendientes o ascendientes.
+- **Fare**: La media del precio del billete es 32.2 y la mediana 14. Esto indica que hay mucha disparidad de precios, siendo
+el máximo 512.
+- **Embarked**: La mayoría embarcaron de Southamption, luego de Cherbourg y unos pocos de Queenstown.
+
+Por último, hacemos una inspección visual de los campos que menos sabemos sobre ellos: Ticket y Cabin.
+
+La codificación del billete (Ticket) parece que sigue diferentes patrones y además, hay viajeros que comparten
+el ticket ya que si los ordenamos, podemos comprobar que estos se repiten:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+sort(ds$Ticket)[1:10]
+```
+Si comprobamos los campos únicos, vemos que pasa de 891 a 681 valores diferentes.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+length(distinct(ds, Ticket)$Ticket)
+```
+Además, el que un ticket se repita no depende de su tipo:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+aux <- count(ds, Ticket)
+aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
+```
+
+Suponemos que se puede comprar un mismo billete para varias personas. ¿Compartirán el camarote? ¿Serán familia?
+Veamos los datos de estos 10.
+
+Ticket 1601:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "1601", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+
+Ticket 347082:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "347082", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+
+Ticket CA. 2343:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "CA. 2343", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+Ticket 347088:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+Ticket 3101295:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "3101295", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+Ticket 347088:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+Ticket CA 2144:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "CA 2144", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+Ticket 382652:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "382652", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+
+Ticket S.O.C. 14879:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+select(ds[ds$Ticket == "S.O.C. 14879", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+sort(distinct(ds, Ticket)$Ticket)
+```
+
+## 2.2 Selección y creación de características
+
+__Los atributos PassengerId y Name no serán objeto de análisis__. 
+
+ Nótese que Cabin es susceptible de ser dividida en letra y número.
+ 
+ 
+## 2.1 Carga de los datos y selección
+
+
+
+## 2.2 Transformación de los datos
+
 
 A continuación analizamos cada uno de los distintos atributos:
 
