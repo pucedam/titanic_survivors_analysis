@@ -345,6 +345,8 @@ TODO: Explicar que hay valores extremos pero no podemos suponer que sean incorre
 
 # 4. Análisis de los datos
 
+Antes de proceder a ver qué grupos de datos queremos normalizar, vamos a ver qué datos son normales y cuáles no, de manera gráfica...
+
 ## 4.1 Selección de los grupos de datos que se quieen analizar / comparar.
 
 Posibles grupos que puedan ser interesantes a la hora de averiguar si la probabilidad de sobrevivir era mucho más alta según el grupo.
@@ -433,3 +435,46 @@ Ambos grupos no tienen la misma varianza.
 ```
 
 Los menores de 16 años tuvieron mucha más oportunidad de salvarse que los mayores de 16 años. La edad es un factor determinante. Pintarlo en el apartado 5.
+
+
+# 5. Representación de los resultados a partir de tablas y gráficas
+
+En el apartado anterior, hemos visto que los niños en particular y la edad en general han tenido un efecto importante sobre la supervivencia de los viajeros del Titanic.
+
+Podemos ver que los menores de 16 años sobrevivieron mucho más que los mayores de 16 años:
+
+```{r}
+
+children_passengers$Survived <-as.integer(children_passengers$Survived) - 1
+not_children__passengers$Survived <- as.integer(not_children__passengers$Survived) - 1
+
+mean_children_passengers <- mean(children_passengers$Survived)
+mean_not_childre_passengers <- mean(not_children__passengers$Survived)
+
+barplot(c(mean_children_passengers, mean_not_childre_passengers), names =c("Niños", "No niños (>16 años)"), main=("Media de supervivencia de los viajeros"), xlab="Edad")
+
+ds$AgeGroup <- cut(ds$Age, 10)
+
+ds$AgeGroup 
+
+#AgeGroup and Survived
+sumAgeGroup <- summarize( group_by(ds, AgeGroup), n=length(AgeGroup), Survived=mean(Survived))
+
+
+gAgeGroup1 <- ds %>%
+group_by(Survived, AgeGroup) %>%
+tally() %>%
+group_by(Survived) %>%
+mutate(x = n / sum(n)) %>%
+ggplot() +
+geom_col(aes(
+x = factor(AgeGroup),
+y = x,
+fill = factor(Survived)
+), position = "stack")
+
+grid.arrange(gAgeGroup1, nrow=1)
+```
+
+
+
