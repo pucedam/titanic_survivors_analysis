@@ -268,9 +268,9 @@ gPClass2 <- ds %>%
   mutate(x = n / sum(n)) %>%
   ggplot() +
     geom_col(aes(
-      x = factor(Survived),
+      x = factor(Pclass),
       y = x,
-      fill = factor(Pclass)
+      fill = factor(Survived)
       ), position = "stack")
 
 #Sex and Survived
@@ -287,9 +287,9 @@ gSex2 <- ds %>%
   mutate(x = n / sum(n)) %>%
   ggplot() +
     geom_col(aes(
-      x = factor(Survived),
+      x = factor(Sex),
       y = x,
-      fill = factor(Sex)
+      fill = factor(Survived)
       ), position = "stack")
 
 #Embarked and Survived
@@ -364,7 +364,7 @@ plot(ds[,c("Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked")])
 
 Podemos ver que hay una fuerte correlacion entre Age y SibSp y otra no tan fuerte, pero presente, entre Age y Parch
 
-## 4.1 Selección de los grupos de datos que se quieen analizar / comparar.
+## 4.1 Selección de los grupos de datos que se quieren analizar / comparar.
 
 A continuación, se nombran los distintos grupos de datos que nos parecen interesantes:
 
@@ -378,7 +378,7 @@ $$
 $$
 
 
-- Realizaremos un modelo (lm) junto al sexo para ver.
+- Intentaremos aproximar mediante regresión los datos. Partiremos de la edad y el sexo, y veremos si podemos incluir una tercera variable para hacer más completa la regresión.
 
 - <<Nos faltan 2>>
 
@@ -454,6 +454,8 @@ var.test(children_passengers$Age, not_children__passengers$Age)
 
 # 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos
 
+## 4.3.1 Supervivencia de menores de 16 años vs mayores de 16 años
+
 Dados los resultados para ambos grupos de edades, estos no tienen distribucion normal ni varianzas heterogéneas, por lo que no podemos utilizar tests pamétricos. Utilizaremos pues el test de Wilcox, no paramétrico, para comprobar si es más probable que un niño sobreviva que un adulto.
 
 ```{r}
@@ -473,8 +475,83 @@ A modo de comprobación, comprobamos que mediante la utilización del test obten
 
 ```
 
+## 4.3.2 Regresión utilizando edad y sexo
+
+Como hemos comentado en el apartado 4.1, comenzaremos nuestra regresión con, en principio, estos dos parámetros. Sabemos que en  el caso de tener que predecir resultados de una variable dicotómica (SI | NO) es mejor utilizar la regresión logística.
+
+Procedemos a estimar el modelo con la edad y el sexo:
+
+```{r}
+
+model.logist1 = glm(formula = Survived ~ Age + Sex, family=binomial(link=logit), data = ds)
+
+summary(model.logist1)
+
+
+```
+
+Vemos por el estadístico de Wald que la variable sexo sí es estadísticamente significativa, pero Age no. Por lo tanto, procedemos a quitarla del modelo.
+
+Del ___data screaning___ vimos que el PClass parecía tener relación con la supervivencia, puesto que los de primera y segunda clase sobrevivieron mucho más que los de tercera.
+
+
+```{r}
+
+model.logist2 = glm(formula = Survived ~ Sex + Pclass, family=binomial(link=logit), data = ds)
+
+summary(model.logist2)
+
+
+```
+
+Vemos que mejor.
+
+```{r}
+
+model.logist3 = glm(formula = Survived ~ Sex + Pclass + SibSp, family=binomial(link=logit), data = ds)
+
+summary(model.logist3)
+
+
+```
+
+Vemos que SibSp no es estadísticamente significativa tampoco. Por lo que la eliminamos y buscamos otra. Probamos con Parch:
+
+
+```{r}
+
+model.logist4 = glm(formula = Survived ~ Sex + Pclass + Parch, family=binomial(link=logit), data = ds)
+
+summary(model.logist4)
+
+
+```
+
+Tampoco. Suponemos que Fare sí tiene que ver:
+
+```{r}
+
+model.logist5 = glm(formula = Survived ~ Sex + Pclass + Fare, family=binomial(link=logit), data = ds)
+
+summary(model.logist5)
+
+
+```
+
+Tampoco.
+
+
+Nos quedamos con el modelo dado entonces por la regresión logistica que utiliza Age y PClass para explicar la variable Survived:
+
+$$
+  Survived = exp(3.05 -2.64*Sex -0.96*Pclass)
+$$
+
+
 
 # 5. Representación de los resultados a partir de tablas y gráficas
+
+## 5.1 Comparación entre menores de 16 años y mayores de 16 años
 
 En el apartado anterior, hemos visto que los niños en particular y la edad en general han tenido un efecto importante sobre la supervivencia de los viajeros del Titanic.
 
@@ -517,6 +594,92 @@ fill = factor(Survived)
 grid.arrange(gAgeGroup1, nrow=1)
 ```
 
+## 5.2 Modelo de regresión logística
+
+Vemos los coeficientes...
+
+```{r}
+exp(coefficients(model.logist2))
+
+
+##IC 
+exp(confint(model.logist2))
+
+```
+
+La variable Sex tiene un OR de 0.0711192 y la Pclass un OR de 0.3826812, por lo que a la hora de calcular la supervivencia, tiene mucho más peso la clase que el sexo.
+
+(Describir los IC...)
+
+
+
+Procedemos a ver cómo se comportaría nuestro modelo de regresión logística a clase constante y distinto sexo:
+
+```{r}
+
+#Males
+new_passengers_male <- data.frame(
+  Sex = rep("male", times = 3),
+  Pclass = c(1,2,3)
+)
+
+#Females
+new_passengers_female <- data.frame(
+  Sex = rep("female", times = 3),
+  Pclass = c(1,2,3)
+)
+
+prob_males <- predict(model.logist2, newdata = new_passengers_male, type="response")
+
+prob_females <- predict(model.logist2, newdata = new_passengers_female, type="response")
+
+prob_males
+
+prob_females
+
+plot(c(1,2,3), prob_females, type = "b", frame = FALSE, pch = 19, col = "pink", xlab = "Pclass", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1,2,3), prob_males, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Mujeres", "Hombres"), col=c("pink", "blue"), lty = c(1,1), cex=0.8)
+
+
+```
+
+Ahora con clase constante y distinto sexo:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c(1,1)
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c(2,2)
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c(3,3)
+)
+
+prob_1 <- predict(model.logist2, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist2, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist2, newdata = new_passengers_class_3, type="response")
+
+plot(c(1, 2), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "Sex", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1, 2), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1, 2), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+
+```
 
 # 6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
 
