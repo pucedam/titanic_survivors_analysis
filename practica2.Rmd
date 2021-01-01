@@ -52,15 +52,13 @@ A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar
 ds <- read.csv(file = "train.csv", header=TRUE, stringsAsFactors=FALSE)
 str(ds)
 ```
-Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres.
+Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Survived, aun siendo variable cuantitativa, representa 0 (no) y 1 (Yes), por lo que en realidad es una variable cualitativa dicotómica. Por cuestiones prácticas no la transformamos.
 
 Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
-- Transformamos el campo dicotómico Survived a Yes(1) y Not(0).
 - Transformamos el campo cualitativo categórico Embarked a un factor con 3 posibles valores, cada uno con el nombre del puerto.
 - Transformamos el campo dicotómico Sex en vez de cadena.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-ds$Survived <- factor(ds$Survived, levels=sort(c(0,1)), labels = c("Not", "Yes"))
 ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
 ds$Sex <- factor(ds$Sex)
 str(ds)
@@ -158,7 +156,7 @@ select(ds[ds$Ticket == "S.O.C. 14879", ], Name, Pclass, Fare, Cabin, Embarked, S
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-sort(distinct(ds, Ticket)$Ticket)
+head(sort(distinct(ds, Ticket)$Ticket))
 ```
 
 ## 2.2 Selección y creación de características
@@ -362,13 +360,11 @@ for(i in 1:ncol(ds)) {
 plot(ds[,c("Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked")])
 ```
 
-Podemos ver que hay una fuerte correlacion entre Age y SibSp y otra no tan fuerte, pero presente, entre Age y Parch
-
 ## 4.1 Selección de los grupos de datos que se quieren analizar / comparar.
 
 A continuación, se nombran los distintos grupos de datos que nos parecen interesantes:
 
-- Analizaremos si __los niños (que tengan 16 años o menos)__ tuvieron la misma probabilidad de sobrevivir que las personas mayores de 16 años o no. Compararemos los dos subgrupos para responder a la siguientes hipótesis, teniendo Ps(x) como la probabilidad de supervivencia del grupo X:
+- Analizaremos si __los niños__, entendiendo como tales los pasajeros que tenían 16 años o menos, __tuvieron la misma probabilidad de sobrevivir que los adultos o, por el contrario, más__. Compararemos los dos subgrupos de viajeros para responder a la siguientes hipótesis, teniendo __Ps(X) como la probabilidad de supervivencia del subgrupo X__:
 
 $$
   H_{0} : p_s(children) = p_s(adults)
@@ -378,108 +374,80 @@ $$
 $$
 
 
-- Intentaremos aproximar mediante regresión los datos. Partiremos de la edad y el sexo, y veremos si podemos incluir una tercera variable para hacer más completa la regresión.
+- Intentaremos __aproximar los datos__ utilizando __un modelo de regresión__. __Partiremos de la edad__, con la que habremos trabajado anteriormente, __y el sexo__, y veremos si podemos incluir una tercera variable que nos permita que mejore el comportamiento de nuestro modelo.
 
-- <<Nos faltan 2>>
+- <<Nos faltan 1>>
 
+
+A continuación, creamos un dataset para los pasajeros que son niños y otro para los adultos. Utilizaremos tales dataset posteriormente para realizar el contraste de hipótesis.
 
 ```{r}
 
-# Compararemos dos grupos: Las personas con 16 años o menos, y las que tengan más de 17 años.
-
 children_passengers <- ds[ds$Age <= 16,] 
-not_children__passengers <- ds[ds$Age > 16,] 
-
-
-# Por clase
-
-# Gente que viajaba sola vs gente con familia
-
-# Por sexo
-
-males_passengers <- ds[ds$Sex == "male",] 
-females_passengers <- ds[ds$Sex == "female",]
-
-  
+adults_passengers <- ds[ds$Age > 16,] 
 
 ```
 
 ## 4.2. Comprobación de la normalidad y homogeneidad de la varianza
 
-A continuación, comprobaremos si el campo Age sigue una distribución normal:
+Comprobamos si el atributo Age de los pasajeros, objeto de nuestro análisis, sigue una distribución normal, utilizando el test de Shapiro-Wilk:
 
 ```{r}
-
-#Análisis de normalidad para el campo Age
-ks.test(ds$Age, pnorm, mean(ds$Age), sd(ds$Age))
 
 shapiro.test(ds$Age)
 
-
 ```
 
-Mediante el uso de estos tests obtenemos que el campo Age no sigue una distribución normal. 
+Obtenemos un __p-palor muy pequeño, menor al nivel de significancia 0.05__, por lo que podemos rechazar la hipótesis nula del test y asumimos que __la variable Age no sigue una distribución normal__.
 
+Dado que la variable Age no sigue una distirbución normal, utilizaremos el __test de Fligner-Killeen__ para comprobar la homocedasticidad de la variable:
 
-Asimismo, procederemos a comprobar si la varianza es homogénea para ambos subbrupos utilizando tanto los tests de lev como de fligner:
+```{r}
+fligner.test(Age~Survived, data = ds)
+
+```
+Observamos que dado el p-value obtenido, menor que 0.05, no podemos rechazar la hipótesis nula y concluimos que __la variable Age presenta una distribución homogénea de la varianza__.
+
+Asimismo comprobamos si ambos subgrupos que vamos a comparar tienen la misma varianza:
 ```{r}
 
-library(car)
-
-levtest<- function(x, y) {
-  leveneTest(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
-                               data.frame(dv=y, gr='gr2')), center='mean')
-}
-
-flignertest<- function(x, y) {
-  fligner.test(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
-                               data.frame(dv=y, gr='gr2')))
-}
-
-levtest(children_passengers$Age, not_children__passengers$Age)
-
-
-flignertest(children_passengers$Age, not_children__passengers$Age)
-
+var.test(children_passengers$Age, adults_passengers$Age)
 
 ```
 
-Asimismo comprobamos que ambos grupos no tienen la misma varianza:
-```{r}
-
-var.test(children_passengers$Age, not_children__passengers$Age)
-
-```
-
+Por el p-value obtenido, muy pequeño, y el ratio que nos devuelve el test concluimos que __la varianza no es la misma para los dos grupos de supervivientes__ (niños y adultos).
 
 # 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos
 
-## 4.3.1 Supervivencia de menores de 16 años vs mayores de 16 años
+## 4.3.1 Supervivencia de niños vs adultos
 
-Dados los resultados para ambos grupos de edades, estos no tienen distribucion normal ni varianzas heterogéneas, por lo que no podemos utilizar tests pamétricos. Utilizaremos pues el test de Wilcox, no paramétrico, para comprobar si es más probable que un niño sobreviva que un adulto.
-
-```{r}
-  
-  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "greater")
-
-
-```
-Como vemos por el p-value, el test nos arroja de manera decisiva que la probabilidad del primer grupo (<=16 años) de sobrevivir era mayor que la del segundo.
-
-A modo de comprobación, comprobamos que mediante la utilización del test obtenemos que para la hipotesis nula contraria, el test nos arroja un valor p muy pequeño, lo que nos permite rechazar la hipotesis nula, si la hiciesemos, de que la probabilidad de sobrevivir de los niños era menor que la de los adultos:
+Aunque la variable Age presente una distribución de la varianza homogénea, no tiene una distribución normal, por lo que no podemos utilizar tests pamétricos para comparar ambos grupos de datos. Utilizaremos pues el __test de Wilcox, no paramétrico, para comprobar si los niños sobrevivieron  más que los adultos__.
 
 ```{r}
   
-  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "less")
+  wilcox.test(children_passengers$Age, adults_passengers$Age, alternative = "greater")
+
+
+```
+Como vemos por el p-value con valor 1, el test nos arroja de manera decisiva que __los niños__ (primer grupo) __sobrevivieron mucho más que los adultos__ (segundo grupo).
+
+A modo de comprobación, comprobamos que mediante la utilización del test obtenemos que para la hipotesis nula contraria:
+
+```{r}
+  
+  wilcox.test(children_passengers$Age, adults_passengers$Age, alternative = "less")
 
 
 ```
 
-## 4.3.2 Regresión utilizando edad y sexo
+En este caso el test nos arroja un valor p muy pequeño, lo que nos permite rechazar la hipotesis nula, si la hiciesemos, de que los niños sobrevivieron significiamente menos que los adultos.
 
-Como hemos comentado en el apartado 4.1, comenzaremos nuestra regresión con, en principio, estos dos parámetros. Sabemos que en  el caso de tener que predecir resultados de una variable dicotómica (SI | NO) es mejor utilizar la regresión logística.
 
-Procedemos a estimar el modelo con la edad y el sexo:
+## 4.3.2 Modelo de regresión
+
+Como hemos comentado en el apartado 4.1, comenzaremos a construir nuestro modelo de regresion con los atributos Age y Sex. Dado que la variable __Survived es una variable cualitativa categórica__, utilizamos un __modelo de regresión logística__ en detrimento del lineal, ya que el rendimiento del primero es mejor en este caso.
+
+Procedemos construir este primer modelo y ver cómo se comporta:
 
 ```{r}
 
@@ -490,92 +458,95 @@ summary(model.logist1)
 
 ```
 
-Vemos por el estadístico de Wald que la variable sexo sí es estadísticamente significativa, pero Age no. Por lo tanto, procedemos a quitarla del modelo.
+Vemos por el estadístico de Wald que la variable __Sex (p-value<0.05) sí es estadísticamente significativa, pero Age (p-value>0.05) no__. Por lo tanto, procedemos a __quitar la variable Age del modelo__.
 
-Del ___data screaning___ vimos que el PClass parecía tener relación con la supervivencia, puesto que los de primera y segunda clase sobrevivieron mucho más que los de tercera.
-
+Del ___data screaning___ observamos que el __Pclass parecía tener relación con la supervivencia__, puesto que los pasajeros de primera y segunda clase sobrevivieron mucho más que los de tercera. Procedemos a __incluirlo en el modelo en detrimento del atributo Age__ y vemos también el rendimiento del nuevo modelo:
 
 ```{r}
 
-model.logist2 = glm(formula = Survived ~ Sex + Pclass, family=binomial(link=logit), data = ds)
+model.logist2.formula = Survived ~ Sex + Pclass
+
+model.logist2 = glm(formula = model.logist2.formula, family=binomial(link=logit), data = ds)
 
 summary(model.logist2)
 
-
 ```
 
-Vemos que mejor.
+Podemos observar que la variable __Pclass es estadísticamente significativa__ y vemos que __el modelo mejora, ya que el Akaike Information Criterion (AIC) es menor que en el primer modelo__ que realizamos.
+
+Probamos a incluir también la variable SibSp en el modelo, ya que de manera intutiva tiene sentido que los hombres que viajasen solos sobreviviesen más que los que viajasen con esposa.
 
 ```{r}
 
-model.logist3 = glm(formula = Survived ~ Sex + Pclass + SibSp, family=binomial(link=logit), data = ds)
+model.logist3.formula = Survived ~ Sex + Pclass + SibSp
+
+model.logist3 = glm(formula = model.logist3.formula, family=binomial(link=logit), data = ds)
 
 summary(model.logist3)
 
 
 ```
 
-Vemos que SibSp no es estadísticamente significativa tampoco. Por lo que la eliminamos y buscamos otra. Probamos con Parch:
+Vemos que __SibSp también es estadísticamente significativa y que mejora un poco el rendimiento del algoritmo__.
 
+Probamos a incorportar del mismo modo la variable Parch:
 
 ```{r}
 
-model.logist4 = glm(formula = Survived ~ Sex + Pclass + Parch, family=binomial(link=logit), data = ds)
+model.logist4 = glm(formula = Survived ~ Sex + Pclass + SibSp + Parch, family=binomial(link=logit), data = ds)
 
 summary(model.logist4)
 
 
 ```
 
-Tampoco. Suponemos que Fare sí tiene que ver:
+Vemos que __la variable Parch no es estadísticamente significativa__, ya que su estadístico de Wald es mayor que 0.05, por lo que __la descartamos__. Comprobamos por último si el precio que pagó cada pasajero por el ticket mejoraría el modelo:
 
 ```{r}
 
-model.logist5 = glm(formula = Survived ~ Sex + Pclass + Fare, family=binomial(link=logit), data = ds)
+model.logist5 = glm(formula = Survived ~ Sex + Pclass + SibSp + Fare, family=binomial(link=logit), data = ds)
 
 summary(model.logist5)
 
 
 ```
 
-Tampoco.
+Podemos observar que __la variable Fare tampoco es estadísticamente significativa, por lo que también la eliminamos del modelo__.
 
 
-Nos quedamos con el modelo dado entonces por la regresión logistica que utiliza Age y PClass para explicar la variable Survived:
+Tras este proceso, podemos concluir que __el mejor modelo logístico que explica la variable Survived es nuestro tercer modelo__, que utiliza Age , Pclass y SibSp para explicar la variable Survived:
 
 $$
-  Survived = exp(3.05 -2.64*Sex -0.96*Pclass)
+  Survived = exp(3.43 -2.74*Sexmale -0.93*Pclass - 0.24*SibSp)
 $$
-
-
 
 # 5. Representación de los resultados a partir de tablas y gráficas
 
 ## 5.1 Comparación entre menores de 16 años y mayores de 16 años
 
-En el apartado anterior, hemos visto que los niños en particular y la edad en general han tenido un efecto importante sobre la supervivencia de los viajeros del Titanic.
-
-Podemos ver que los menores de 16 años sobrevivieron mucho más que los mayores de 16 años:
+En el apartado anterior, hemos visto que __los niños sobrevivieron mucho más que los adultos__. Podemoso __visualizar__ esto de manera gráfica:
 
 ```{r}
 
-#Calculate <=16 and >16 mean
-children_passengers$Survived <-as.integer(children_passengers$Survived) - 1
-not_children__passengers$Survived <- as.integer(not_children__passengers$Survived) - 1
+#Calculamos la media para los dos tipos de pasajeros y lo pintamos en un diagrama de barras
+
+children_passengers$Survived <-as.integer(children_passengers$Survived)
+adults_passengers$Survived <- as.integer(adults_passengers$Survived)
 
 mean_children_passengers <- mean(children_passengers$Survived)
-mean_not_childre_passengers <- mean(not_children__passengers$Survived)
+mean_adults_passengers <- mean(adults_passengers$Survived)
 
 #Print it
-barplot(c(mean_children_passengers, mean_not_childre_passengers), names =c("Niños", "No niños (>16 años)"), main=("Media de supervivencia de los viajeros"), xlab="Edad")
+barplot(c(mean_children_passengers, mean_adults_passengers), names =c("Niños", "No niños (>16 años)"), main=("Media de supervivencia de los viajeros"), xlab="Edad")
 ```
 
-Asimismo, procedemos a comprobar cómo se distribuye la supervivencia agrupando las edades por grupos:
+Podemos ver también __cómo se distribuye la supervivencia, agrupando los pasajeros por edades__:
 
 ```{r}
+#Agrupamos por tramos de edad
 ds$AgeGroup <- cut(ds$Age, breaks=c(0,4,8,12,16,20,24,30,40,50,60,70,80))
 
-#AgeGroup and Survived
+#Pintamos AgeGroup and Survived
 sumAgeGroup <- summarize( group_by(ds, AgeGroup), n=length(AgeGroup))
 
 
@@ -594,44 +565,45 @@ fill = factor(Survived)
 grid.arrange(gAgeGroup1, nrow=1)
 ```
 
+Puede verse que __para los pasajeros con 16 años o menos la supervivencia es significativamente mayor, con la excepción del rango de edad de 4 a 8 años__. Por lo tanto, la supervivencia de los niños es mayor, pero tiene __más dispersión que la de los adultos__.
+
 ## 5.2 Modelo de regresión logística
 
-Vemos los coeficientes...
+Vemos los coeficiented del modelo que hemos dado como mejor (el tercero) para ver cómo se comportan las variables que lo explican:
 
 ```{r}
-exp(coefficients(model.logist2))
+exp(coefficients(model.logist3))
 
 
 ##IC 
-exp(confint(model.logist2))
+exp(confint(model.logist3))
 
 ```
 
-La variable Sex tiene un OR de 0.0711192 y la Pclass un OR de 0.3826812, por lo que a la hora de calcular la supervivencia, tiene mucho más peso la clase que el sexo.
-
-(Describir los IC...)
+La variable Sex tiene un OR de 0.064, la Pclass un OR de 0.39 y la SibSp un 0.78, por lo que a la hora de explicar la variable Survived sorprendentemente tiene mucho más peso la variable SibSp que el sexo o la clase, si bien tiene un Intervalo de Confianza, con una confianza del 95%, más amplio que las otras dos variables.
 
 
-
-Procedemos a ver cómo se comportaría nuestro modelo de regresión logística a clase constante y distinto sexo:
+Procedemos a ver cómo se comportaría nuestro modelo de regresión logística a clase y SibSp constante y distinto sexo:
 
 ```{r}
 
 #Males
 new_passengers_male <- data.frame(
   Sex = rep("male", times = 3),
-  Pclass = c(1,2,3)
+  Pclass = c(1,2,3),
+  SibSp = c(1,1,1)
 )
 
 #Females
 new_passengers_female <- data.frame(
   Sex = rep("female", times = 3),
-  Pclass = c(1,2,3)
+  Pclass = c(1,2,3),
+  SibSp = c(1,1,1)
 )
 
-prob_males <- predict(model.logist2, newdata = new_passengers_male, type="response")
+prob_males <- predict(model.logist3, newdata = new_passengers_male, type="response")
 
-prob_females <- predict(model.logist2, newdata = new_passengers_female, type="response")
+prob_females <- predict(model.logist3, newdata = new_passengers_female, type="response")
 
 prob_males
 
@@ -646,29 +618,32 @@ legend("topright", legend=c(" Mujeres", "Hombres"), col=c("pink", "blue"), lty =
 
 ```
 
-Ahora con clase constante y distinto sexo:
+Ahora con clase y SibSps constantes y distinto sexo:
 
 ```{r}
 new_passengers_class_1 <- data.frame(
   Sex = c("male", "female"),
-  Pclass = c(1,1)
+  Pclass = c(1,1),
+  SibSp = c(1,1)
 )
 
 new_passengers_class_2 <- data.frame(
   Sex = c("male", "female"),
-  Pclass = c(2,2)
+  Pclass = c(2,2),
+  SibSp = c(1,1)
 )
 
 new_passengers_class_3 <- data.frame(
   Sex = c("male", "female"),
-  Pclass = c(3,3)
+  Pclass = c(3,3),
+  SibSp = c(1,1)
 )
 
-prob_1 <- predict(model.logist2, newdata = new_passengers_class_1, type="response")
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
 
-prob_2 <- predict(model.logist2, newdata = new_passengers_class_2, type="response")
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
 
-prob_3 <- predict(model.logist2, newdata = new_passengers_class_3, type="response")
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
 
 plot(c(1, 2), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "Sex", ylab = "prob Survived", ylim = c(0,1))
 
@@ -681,7 +656,205 @@ legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"),
 
 ```
 
+
+Por último, solamente variaremos el SibSp. En el caso de los hombres:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep(1, times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep(c(2), times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep(3, times = 10),
+  SibSp = 1:10
+)
+
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
+
+plot(c(1:10), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "SibSp", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1:10), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1:10), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+```
+
+Y en el de las mujeres:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep(1, times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep(c(2), times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep(3, times = 10),
+  SibSp = 1:10
+)
+
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
+
+plot(c(1:10), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "SibSp", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1:10), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1:10), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+```
+
+
+Vemos cómo se comporta nuestro modelo: 
+
+```{r}
+
+model=model.logist3
+
+prob=predict(model, ds, type="response")
+
+r=roc(ds$Survived,prob, data=ds)
+
+plot (r)
+
+auc(r)
+
+```
+
+Vemos que el __área bajo la curva es de  0.8328, por lo que la capacidad de predicción de nuestro modelo es bastante buena__. Procedemos a calcular la sensibilidad y la especifidad.
+
+```{r}
+
+calculate_sensibility <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  yes_yes <- confusion_matrix[2,2]
+  yes_no <- confusion_matrix[1,2]
+  
+  sensibility <- yes_yes / (yes_yes + yes_no)
+  
+  return(sensibility)
+}
+
+calculate_specifity <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  no_no <- confusion_matrix[1,1]
+  no_yes <- confusion_matrix[2,1]
+  
+  specifity <- no_no / (no_no + no_yes)
+  
+  return(specifity)
+}
+
+
+calculate_global_accuracy <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  yes_yes <- confusion_matrix[2,2]
+  yes_no <- confusion_matrix[1,2]
+  no_no <- confusion_matrix[1,1]
+  no_yes <- confusion_matrix[2,1]
+  
+  ok_results <- yes_yes + no_no
+  ko_results <- yes_no + no_yes
+  
+  ok_results / (ok_results + ko_results)
+}
+
+
+calculate_confusion_matrix <- function(model, data, real_values, threshold){
+  predictions <- ifelse(predict(model, newdata = data, type="response")<threshold, "No","Yes")
+  
+  table(real_values, predictions, dnn = c("Valor Real","Valor Predicho"))
+}
+
+```
+
+A continuación, observamos a ver cómo evoluciona la calidad (sensibilidad, especifidad y calidad total) cambiando el umbral según el cual aceptaremos que nuestro modelo predice si un viajero se salvó o no:
+```{r}
+
+calculate_quality_params <- function(model, data, real_values, threshold){
+
+confusion_matrix <- calculate_confusion_matrix(model, data, real_values, threshold)
+
+specifity <- calculate_specifity(confusion_matrix)
+
+sensibility <- calculate_sensibility(confusion_matrix)
+
+global_accuracy <- calculate_global_accuracy(confusion_matrix)
+
+list("threshold" = threshold, "confusion_matrix" = confusion_matrix, "specifity" = specifity, "sensibility" = sensibility, "global accuracy" = global_accuracy)
+}
+
+quality_params_06 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.6)
+
+quality_params_07 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.7)
+
+quality_params_08 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.8)
+
+quality_params_85 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.85)
+
+quality_params_09 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.9)
+
+quality_params_06
+quality_params_07
+quality_params_08
+quality_params_85
+quality_params_09
+
+```
+
+Vemos que __con un umbral del 0.6, obtenemos una gran sensibilidad (83%) sin comprometer la calidad total (80%)__ por lo que __la calidad de nuestro modelo es bastante aceptable__.
+
+
 # 6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
 
-Vemos que por lo tanto, aunque no siga una distribución conocida a priori, a partir de los 16 años es mucho más probable no haber sobrevivido que teniendo 16 años o menos, por lo que __podemos aceptar que las personas con 16 años o menos sobrevivieron de manera significante más que los mayores de 16 años__.
+En primer lugar nos hemos preguntado si los niños sobrevivieron más que los adultos, __comparando el atributo Age entre estas dos subpoblaciones__. Si bien la variable Age no sigue una distribución normal y no podemos explicar el comportamiento de la variable Survived a partir de ella, sí __hemos concluído, con un 95% de confianza, que los niños sobrevivieron mucho más que los adultos__. Asimismo, la supervivencia de los niños está mucho más dispersa que la de los adultos.
+
+Posteriormente, hemos construído un modelo de regresión lineal logística que explica la variable Survived con bastante calidad. El modelo es el siguiente:
+
+$$
+  Survived = exp(3.43 -2.74*Sexmale -0.93*Pclass - 0.24*SibSp)
+$$
+A través del modelo mismo y de las gráficas de predicciones del mismo, hemos descubierto que:
+
+- Aunque los niños sobreviviesen mucho más que los adultos, __no podemos establecer un modelo que explique la variable Survived con el atributo Age__.
+
+- En general, __los hombres tienen muchas menos probabilidades de sobrevivir que las mujeres__.
+
+- __La clase también tiene un papel fundamental__. Sin importar esposa o hermanos, __un hombre de tercera clase _a priori_ tiene muy pocas probabilidades de haber sobrevivido__.
+
+- Sorprendentemente, __la variable SibSp es la que más peso tiene__. __A partir de 6 hermanos / esposa un hombre, independientemente de su clase, tiene muy pocas probabilidades de sobrevivir__. Podemos observar también cómo __en las mujeres este efecto es menos acusado__, y que una mujer de primera clase, incluso yendo con muchos hermanos, sí tenía mucha más probabilidad de sobrevivir que un hombre.
+
+
+
+
 
