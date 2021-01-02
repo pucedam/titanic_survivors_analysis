@@ -63,6 +63,7 @@ Para más claridad de los datos, procedemos a realizar las siguientes transforma
 ds$Survived <- factor(ds$Survived, levels=sort(c(0,1)), labels = c("Not", "Yes"))
 ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
 ds$Sex <- factor(ds$Sex)
+ds$Pclass <- factor(ds$Pclass, ordered=TRUE, levels=c(1, 2, 3), labels=c("1st", "2nd", "3rd"))
 str(ds)
 ```
 
@@ -86,6 +87,8 @@ el máximo 512.
 
 Por último, hacemos una inspección visual de los campos que menos sabemos sobre ellos: Ticket y Cabin.
 
+### 2.1.1 Campo Ticket
+
 La codificación del billete (Ticket) parece que sigue diferentes patrones y además, hay viajeros que comparten
 el ticket ya que si los ordenamos, podemos comprobar que estos se repiten:
 
@@ -105,61 +108,75 @@ aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
 ```
 
 Suponemos que se puede comprar un mismo billete para varias personas. ¿Compartirán el camarote? ¿Serán familia?
-Veamos los datos de estos 10.
+Veamos los datos de estos 8.
 
-Ticket 1601:
+Ticket 1601: Varias personas de origen chino tienen un billete común y, según los datos, no tienen parentesco entre sí.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "1601", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket 347082:
+Ticket 347082: Familia formada por 2 padres y 5 hijos de 2, 4, 6 y 9 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347082", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket CA. 2343:
+Ticket CA. 2343: Deben ser hermanos viajando con sus esposas ya que tienen todas el mismo apellido y, aunque no se sabe la edad, el billete es caro (saldrían a 10 libras por cabeza)
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "CA. 2343", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 347088:
+Ticket 347088: Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 3101295:
+Ticket 3101295: Madre con sus 5 hijos de 1, 2, 7, 14 y 16 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "3101295", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 347088:
+Ticket 347088: Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket CA 2144:
+Ticket CA 2144: Madre con sus 5 hijos de 1, 9, 11, 14 y 16 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "CA 2144", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 382652:
+Ticket 382652: Madre con sus 4 hijos de 2, 4, 7 y 8 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "382652", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket S.O.C. 14879:
+Ticket S.O.C. 14879: Billete de 2a clase compartido entre hermanos e, imaginamos, que amigos.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "S.O.C. 14879", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
+La exploración del campo Ticket nos revela que los billetes se comparten, este hecho se ha confirmado tras estudiar un poco de historia en Wikipedia (https://en.wikipedia.org/wiki/Passengers_of_the_Titanic). Resulta que el precio típico de los billetes del Titanic era de 7, 13 y desde 30 libras tercera, segunda y primera clase, respectivamente. El precio de los niños de tercera era 3 libras. Por tanto, al menos, para hacer un análisis por persona, habría que:
+
+- Adaptar el precio por persona: dividiendo fare por el número de personas que disponen del billete.
+- Un campo nuevo podría indicar con cuántas personas se compartía el billete.
+- Si del nombre nos quedamos con el apellido, podemos analizar también la probabilidad de muerte en función del apellido. ¿Hay apellidos más afortunados que otros o de clases sociales diferentes?
+
+Por otro lado, al nombre del Ticket no hemos conseguido sacar una relación o significado claro a primera vista.
+
+### 2.1.1 Campo Cabin
+
+Al igual que con el campo Ticket, se han agrupado y contado los valores del campo Cabin. Como se puede ver en la tabla de abajo, la gran cantidad de registros no contiene el nombre del camarote (687). Los nombres de los camarotes parece que están formados por la letra de la cubierta y seguido de un número. La mayoría de los registros corresponden a 1a clase, aunque también hay registros con 2a y 3a. También llama la atención, que recoge más de un camarote.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-sort(distinct(ds, Ticket)$Ticket)
+aux <- count(ds, Cabin)
+aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
 ```
+
+
 
 ## 2.2 Selección y creación de características
 
