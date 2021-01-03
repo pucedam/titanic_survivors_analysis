@@ -332,9 +332,11 @@ $$
 $$
 
 
-- Intentaremos __aproximar los datos__ utilizando __un modelo de regresión__. __Partiremos de la edad__, con la que habremos trabajado anteriormente, __y el sexo__, y veremos si podemos incluir una tercera variable que nos permita que mejore el comportamiento de nuestro modelo.
+- Intentaremos __aproximar los datos__ utilizando __un modelo de regresión__. __Partiremos de la edad__, con la que habremos trabajado anteriormente, __y el sexo__, y veremos si podemos incluir una tercera variable que nos permita que mejore el comportamiento de nuestro modelo
 
-- <<Nos faltan 1>>
+- Haremos un __análisis de correlación__ de los datos con la variable objetivo. ¿Cuanto más cuesta el billete hay más probabilidades de sobrevivir?
+
+- Por último, realizaremos un __modelo no supervisado jerárquico__ para ver cómo afectan cada variable a la supervivencia de los pasajeros.
 
 
 A continuación, creamos un dataset para los pasajeros que son niños y otro para los adultos. Utilizaremos tales dataset posteriormente para realizar el contraste de hipótesis.
@@ -478,11 +480,59 @@ $$
   Survived = exp(3.43 -2.74*Sexmale -0.93*Pclass - 0.24*SibSp)
 $$
 
+## 4.3.3 Análisis del modelo no supervisado jerárquico
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colnames(ds)
+```
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(usedist)
+
+maxAge <- max(ds$Age)
+minAge <- min(ds$Age)
+maxSibSp <- max(ds$SibSp)
+minSibSp <- min(ds$SibSp)
+maxParch <- max(ds$Parch)
+minParch <- min(ds$Parch)
+maxTicketOwners <- max(ds$TicketOwners)
+minTicketOwners <- min(ds$TicketOwners)
+maxPricePerPerson <- max(ds$PricePerPerson)
+minPricePerPerson <- min(ds$PricePerPerson)
+
+distance <- function (v1, v2) (as.integer(v1$Survived == v2$Survived) + as.integer(v1$Surname == v2$Surname) + as.integer(v1$Sex == v2$Sex) +  as.integer(v1$Embarked == v2$Embarked) + 1 - abs(as.integer(v1$Pclass) - as.integer(v2$Pclass)) / 2 + 1 - ((v1$Age - v2$Age) / (maxAge - minAge)) + 1 - ((v1$SibSp - v2$SibSp) / (maxSibSp - minSibSp)) + 1 - ((v1$Parch - v2$Parch) / (maxParch - minParch)) + 1 - ((v1$TicketOwners - v2$TicketOwners) / (maxTicketOwners - minTicketOwners)) + 1 - ((v1$PricePerPerson - v2$PricePerPerson) / (maxPricePerPerson - minPricePerPerson))) / 10
+
+distance_matrix <- dist_make(ds, distance)
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+hc<-hclust(distance_matrix, method="ave")
+
+plot(hc, hang = -1, labels = ds$Surivived)
+rect.hclust(hc, k = 2)
+
+```
+
+"Survived"       "Pclass"         "Sex"            "Age"
+ 
+ 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(usedist)
+
+maxAge <- max(ds$Age)
+minAge <- min(ds$Age)
+
+distance <- function (v1, v2) (as.integer(v1$Survived == v2$Survived) + as.integer(v1$Sex == v2$Sex) + 1 - abs(as.integer(v1$Pclass) - as.integer(v2$Pclass)) / 2 + 1 - ((v1$Age - v2$Age) / (maxAge - minAge))) / 4
+
+distance_matrix <- dist_make(ds, distance)
+```
+
+
 # 5. Representación de los resultados a partir de tablas y gráficas
 
 ## 5.1 Comparación entre menores de 16 años y mayores de 16 años
 
-En el apartado anterior, hemos visto que __los niños sobrevivieron mucho más que los adultos__. Podemoso __visualizar__ esto de manera gráfica:
+En el apartado anterior, hemos visto que __los niños sobrevivieron mucho más que los adultos__. Podemos __visualizar__ esto de manera gráfica:
 
 ```{r}
 
