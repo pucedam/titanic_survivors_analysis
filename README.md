@@ -22,4 +22,4 @@ El dataset limpio se puede consultar en el siguiente [enlace](https://github.com
 
 ## Licencia
 
-El contenido de este proyecto esta licencia bajo la [licencia Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+El contenido de este proyecto esta licencia bajo la [licencia Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0).
