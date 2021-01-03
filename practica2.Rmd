@@ -52,15 +52,17 @@ A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar
 ds <- read.csv(file = "train.csv", header=TRUE, stringsAsFactors=FALSE)
 str(ds)
 ```
-Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres.
+Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Survived, aun siendo variable cuantitativa, representa 0 (No) y 1 (Yes), por lo que en realidad es una variable cualitativa dicotómica. 
 
 Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
-- Transformamos el campo dicotómico Survived a Yes(1) y Not(0).
+
+- Transofmramos el campo Survived como uno categórico con dos valores "Yes" y "Not", si el pasajero sobrevivió o no, respectivamente.
 - Transformamos el campo cualitativo categórico Embarked a un factor con 3 posibles valores, cada uno con el nombre del puerto.
 - Transformamos el campo dicotómico Sex en vez de cadena.
+- Transformamos el campos Pclass como un ordinal ya que las clases tienen un orden y le damos los valores: "1st", "2nd", "3rd".
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-ds$Survived <- factor(ds$Survived, levels=sort(c(0,1)), labels = c("Not", "Yes"))
+ds$Survived <- factor(ds$Survived, levels=c(0, 1), labels = c("Not", "Yes"))
 ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
 ds$Sex <- factor(ds$Sex)
 ds$Pclass <- factor(ds$Pclass, ordered=TRUE, levels=c(1, 2, 3), labels=c("1st", "2nd", "3rd"))
@@ -116,44 +118,49 @@ Ticket 1601: Varias personas de origen chino tienen un billete común y, según 
 select(ds[ds$Ticket == "1601", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket 347082: Familia formada por 2 padres y 5 hijos de 2, 4, 6 y 9 años.
+**Ticket 347082:** Familia formada por 2 padres y 5 hijos de 2, 4, 6 y 9 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347082", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket CA. 2343: Deben ser hermanos viajando con sus esposas ya que tienen todas el mismo apellido y, aunque no se sabe la edad, el billete es caro (saldrían a 10 libras por cabeza)
+**Ticket CA. 2343:** Deben ser hermanos viajando con sus esposas ya que tienen todas el mismo apellido y, aunque no se sabe la edad, el billete es caro (saldrían a 10 libras por cabeza)
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "CA. 2343", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 347088: Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
+
+**Ticket 347088:** Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 3101295: Madre con sus 5 hijos de 1, 2, 7, 14 y 16 años.
+
+**Ticket 3101295:** Madre con sus 5 hijos de 1, 2, 7, 14 y 16 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "3101295", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 347088: Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
+
+**Ticket 347088:** Matrimonio con sus 4 hijos de 2, 4, 9 y 10 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "347088", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket CA 2144: Madre con sus 5 hijos de 1, 9, 11, 14 y 16 años.
+
+**Ticket CA 2144:** Madre con sus 5 hijos de 1, 9, 11, 14 y 16 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "CA 2144", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
-Ticket 382652: Madre con sus 4 hijos de 2, 4, 7 y 8 años.
+
+**Ticket 382652:** Madre con sus 4 hijos de 2, 4, 7 y 8 años.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "382652", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-Ticket S.O.C. 14879: Billete de 2a clase compartido entre hermanos e, imaginamos, que amigos.
+**Ticket S.O.C. 14879:** Billete de 2a clase compartido entre hermanos e, imaginamos, que amigos.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "S.O.C. 14879", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
@@ -169,284 +176,643 @@ Por otro lado, al nombre del Ticket no hemos conseguido sacar una relación o si
 
 ### 2.1.1 Campo Cabin
 
-Al igual que con el campo Ticket, se han agrupado y contado los valores del campo Cabin. Como se puede ver en la tabla de abajo, la gran cantidad de registros no contiene el nombre del camarote (687). Los nombres de los camarotes parece que están formados por la letra de la cubierta y seguido de un número. La mayoría de los registros corresponden a 1a clase, aunque también hay registros con 2a y 3a. También llama la atención, que recoge más de un camarote.
+Al igual que con el campo Ticket, se han agrupado y contado los valores del campo Cabin. Como se puede ver en la tabla de abajo, la gran cantidad de registros no contiene el nombre del camarote (687). Los nombres de los camarotes parece que están formados por la letra de la cubierta (A-F) y seguido de un número. La mayoría de los registros corresponden a 1a clase, aunque también hay registros con 2a y 3a. También llama la atención, que recoge más de un camarote.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 aux <- count(ds, Cabin)
-aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
+head(aux[order(aux[,2], decreasing = TRUE), ])
 ```
-
-
 
 ## 2.2 Selección y creación de características
 
-__Los atributos PassengerId y Name no serán objeto de análisis__. 
+Como hemos visto en el apartado anterior, tras explorar el campo Ticket, vimos que podíamos crear nuevos campos:
 
- Nótese que Cabin es susceptible de ser dividida en letra y número.
- 
- 
-## 2.1 Carga de los datos y selección
+- **Surname**: campo del apellido del propietario del billete.
+- **TicketOwners**: número de propietarios de un billete.
+- **PricePerPerson**: precio del billete por persona, ya que Fare contiene el precio del billete total.
 
+Los nombres están formados primero por el apellido, luego una coma y después el nombre. Para extraer el apellido, simplemente separamos por coma y nos quedamos con la primera parte:
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyr)
 
-## 2.2 Transformación de los datos
+ds <- separate(ds, Name, c("Surname", NA))
+head(ds)
+```
+Luego, obtenemos el número de propietarios por billete (TicketOwners) y con este campo obtenemos el precio por persona (PricePerPerson). Los campos nuevos generados serían:
 
-
-A continuación analizamos cada uno de los distintos atributos:
-
-```{r}
-
-summary(ds)
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+aux <- count(ds, Ticket)
+ds <- merge(x = ds, y = aux, by = "Ticket", all.x = TRUE)
+colnames(ds)[13] <- "TicketOwners"
+ds$PricePerPerson <- ds$Fare / ds$TicketOwners
+head(select(ds, Surname, TicketOwners, PricePerPerson))
 ```
 
-Vemos que los campos Age y Embarked tienen 177 y 2 valores nulos, respectivamente. Como no tiene sentido interpretarlos como 0 años o ningún puerto, sustituimos estos campos por la mediana para que afecten en la medida de lo posible al análisis.
+__Los atributos PassengerId, Ticket, Fare y Name no serán objeto de análisis__. Por tanto, los campos que finalmente se consideran para ser limipados y analizados son:
 
-```{r}
-
-age_median <- median(ds$Age, na.rm = TRUE)
-
-ds[, 'Age'][is.na(ds[,'Age'])] <- age_median
-
-embarked_most_frequent <-  levels(ds$Embarked)[which.max(ds$Embarked)]
-
-ds[, 'Embarked'][is.na(ds[,'Embarked'])] <- embarked_most_frequent
-
-summary(ds)
-
-
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ds <- subset(ds, select = -c(PassengerId, Ticket, Fare) )
+str(ds)
 ```
 
+# 3. Limpieza de datos
 
-```{r}
-#Visualización de variables cuantitativas
+En este apartado vamos a limpiar los datos para que el análisis posterior y los modelos generados sean más representativos y correctos.
 
-#Age
-gAge1 <- ggplot(ds, aes(x=Age)) + geom_boxplot()
-
-gAge2 <- ggplot(ds, aes(x=Age)) + geom_histogram(bins=20)
-
-#SibSp
-
-gSibSp1 <- ggplot(ds, aes(x=SibSp)) + geom_boxplot()
-
-gSibSp2 <- ggplot(ds, aes(x=SibSp)) + geom_histogram(bins=20)
-
-#Parch
-
-gParch1 <- ggplot(ds, aes(x=Parch)) + geom_boxplot()
-
-gParch2 <- ggplot(ds, aes(x=Parch)) + geom_histogram(bins=20)
-
-
-#Fare
-
-gFare1 <- ggplot(ds, aes(x=Fare)) + geom_boxplot()
-
-gFare2 <- ggplot(ds, aes(x=Fare)) + geom_histogram(bins=20)
-
-
-```
-
-
-```{r}
-
-grid.arrange(gAge1,gAge2,nrow=1)
-
-grid.arrange(gSibSp1,gSibSp2,nrow=1)
-
-grid.arrange(gParch1,gParch2,nrow=1)
-
-grid.arrange(gFare1,gFare2,nrow=1)
-
-```
-
-```{r}
-
-#Visualizacion de variables cuantitativas
-
-#Survived
-sumSurvived <- summarize( group_by(ds, Survived), n=length(Survived), Fare=mean(Fare))
-
-gSurvived1 <- ggplot( sumSurvived, aes(x="", y=n, fill=Survived)) +
-geom_bar(width = 1, stat = "identity") +
-coord_polar("y", start=0) + ggtitle("Survived")
-
-#PClass and Survived
-sumPClass <- summarize( group_by(ds, Pclass), n=length(Pclass), Survived=mean(Survived))
-
-gPClass1 <- ggplot( sumPClass, aes(x="", y=n, fill=Pclass)) +
-geom_bar(width = 1, stat = "identity") +
-coord_polar("y", start=0) + ggtitle("PClass")
-
-gPClass2 <- ds %>%
-  group_by(Survived, Pclass) %>%
-  tally() %>%
-  group_by(Survived) %>%
-  mutate(x = n / sum(n)) %>%
-  ggplot() +
-    geom_col(aes(
-      x = factor(Survived),
-      y = x,
-      fill = factor(Pclass)
-      ), position = "stack")
-
-#Sex and Survived
-sumSex <- summarize( group_by(ds, Sex), n=length(Sex), Survived=mean(Survived))
-
-gSex1 <- ggplot( sumSex, aes(x="", y=n, fill=Sex)) +
-geom_bar(width = 1, stat = "identity") +
-coord_polar("y", start=0) + ggtitle("Sex")
-
-gSex2 <- ds %>%
-  group_by(Survived, Sex) %>%
-  tally() %>%
-  group_by(Survived) %>%
-  mutate(x = n / sum(n)) %>%
-  ggplot() +
-    geom_col(aes(
-      x = factor(Survived),
-      y = x,
-      fill = factor(Sex)
-      ), position = "stack")
-
-#Embarked and Survived
-sumEmbarked <- summarize( group_by(ds, Embarked), n=length(Embarked))
-
-gEmbarked1 <- ggplot( sumEmbarked, aes(x="", y=n, fill=Embarked)) +
-geom_bar(width = 1, stat = "identity") +
-coord_polar("y", start=0) + ggtitle("Embarked")
-
-
-gEmbarked2 <- ds %>%
-  group_by(Survived, Embarked) %>%
-  tally() %>%
-  group_by(Survived) %>%
-  mutate(x = n / sum(n)) %>%
-  ggplot() +
-    geom_col(aes(
-      x = factor(Embarked),
-      y = x,
-      fill = factor(Survived)
-      ), position = "stack")
-
-```
-
-```{r}
-
-grid.arrange(gSurvived1, nrow=2)
-
-grid.arrange(gPClass1,gPClass2, nrow=1)
-
-grid.arrange(gSex1, gSex2, nrow=1)
-
-grid.arrange(gEmbarked1, gEmbarked2, nrow=1)
-
-```
-
-#2.3 Descipción estadística descriptiva
-
-TODO: Describir cómo se distribuyen los datos y como podría saltar a la vista correlaciones. Da idea del ejercicio 4.
-
-#3. Limpieza de datos
 
 ## 3.1  Elementos vacíos
 
-TODO: En el ejercicio 1 se ha pintado  el campo Age y el campo Embarked ya sin elementos vacíos. Traer aqui y pintar de nuevo, con un summary para demostrar que han desaparecido.
+Primero, vamos comprobar aquellos campos que son nulos o vacíos:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Estadísticas básicas
+summary(ds)
+
+# Estadísticas de valores vacíos
+colSums(is.na(ds))
+colSums(ds=="")
+```
+
+Vemos que los campos que tienen campos nulos o vacíos son:
+
+- **Age** tiene 177 nulos y su valor debe ser mayor de cero. En este caso, lo ideal sería generar un modelo de regresión que predijese la edad ya que puede depender de la clase, el sexo pero sobre todo de la clase y el precio, ya que los niños pagan menos. Por simplicidad, vamos a hacer la mediana de las edades.
+- **Embarked** tiene 2 valores nulos y cada persona tiene que haber embarcado desde algún puerto. En este caso, con el ticket a lo mejor se podría deducir desde donde se ha embarcado. En este caso, asignaremos el puerto más probable, es decir, desde donde más gente embarcó.
+- **Cabin** tiene 687 valores vacíos y cada persona tiene que dormir en algún camarote. La cantidad de nulos es enorme, sobre todo para los de tercera clase. El camarote exacto no se puede averiguar. En base a la clase, se podría asignar una letra de cubierta. Pero para ello habría que cambiar la variable Cabin por Desk. En este caso, lo que haremos será eliminar la variable.  
+
+Como podemos comprobar, ya no hay nulos:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+age_median <- median(ds$Age, na.rm = TRUE)
+ds[, 'Age'][is.na(ds[,'Age'])] <- age_median
+
+embarked_most_frequent <-  levels(ds$Embarked)[which.max(ds$Embarked)]
+ds[, 'Embarked'][is.na(ds[,'Embarked'])] <- embarked_most_frequent
+
+ds <- subset(ds, select = -c(Cabin) )
+
+summary(ds)
+```
 
 
 ## 3.2 Identificación y tratamiento de valores extremos.
 
+En este apartado vamos a analizar los valores de los campos numéricos para ver si hay valores que no tienen sentido o resultan extraños, por ejemplo, los valores extremos. Un criterio para identificar los valores extremos son aquellos que se sitúan a 3 veces la desviación estándar de la media. Una herramienta muy útil para identificar dichos valores son las gráficas de caja. Veamos por variables:
 
-TODO: Explicar que hay valores extremos pero no podemos suponer que sean incorrectos (por ejemplo gente que tiene 8 hermanos o un billete que cuesta 500$). Poner ejemplos...
+**Age**: Si hacemos las gráficas por clase, podemos ver que hay valores extremos pero están dentro de un rango de edades
+normal, entre 0.42 y 80. Se puede comprobar cómo, cuanto mejor es la clase, mayor es la edad.
 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gAge1 <- ggplot(ds, aes(x=Pclass, y=Age)) + geom_boxplot()
+gAge1
+```
+**SibSp** y **Parch**: En ambos casos se presentan outliers porque lo más común es viajar sin familiares y hay casos de 3, 4, 5 y hasta 8 hermanos que para la época no es extraño. Así que los valores para estos campos se consideran correctos.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gSibSp <- ggplot(ds, aes(x=Pclass, y=SibSp)) + geom_boxplot()
+gParch <- ggplot(ds, aes(x=Pclass, y=Parch)) + geom_boxplot()
+grid.arrange(gSibSp,gParch,nrow=1)
+```
+**TicketOwners** y **PricePerPerson**: Para la tercera y segunda clase, lo más común es viajar sólo y en primera es viajar con un acompañante. El número de personas máximo que comparten billete es 8 pero es normal si se considera que había alguna familiar con hasta 8 hermanos. Los datos son consistentes. Si vemos los precios por clase, vemos cómo son cada vez más elevados en función de la clase. Vemos outliers para tercera y segunda, por ejemplo billestes de tercera que cuestan 20 libras no debe estar bien. En cambio, para primera clase, no es raro que haya outliers, ya que el lujo nunca tiene techo. Según las investigaciones, hubo pasajeros de primera clase que llegaron a pagar más de 1000 libras.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gTicketOwners <- ggplot(ds, aes(x=Pclass, y=TicketOwners)) + geom_boxplot()
+gPricePerPerson <- ggplot(ds, aes(x=Pclass, y=PricePerPerson)) + geom_boxplot()
+grid.arrange(gTicketOwners,gPricePerPerson,nrow=1)
+```
+En este caso, lo que vamos a tratar, son aquellos casos en el que el precio del billete por persona es cero, ya que eso no puede ser a menos que la persona sea de la tripulación pero suponemos que son todo pasajeros. Por tanto, lo que haremos será reemplazar todos los valores 0 del campo PricePerPerson, por la mediana de dicho precio en función de a la clase que pertenezca el pasajero.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+price_per_class <- aggregate(ds$PricePerPerson,         # Median by group
+          list(ds$Pclass),
+          median)
+colnames(price_per_class) <- c("Pclass", "PricePerPerson")
+price_per_class
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ds[ds$PricePerPerson == 0 & ds$Pclass == "1st", ]$PricePerPerson <- price_per_class[1, 2]
+ds[ds$PricePerPerson == 0 & ds$Pclass == "2nd", ]$PricePerPerson <- price_per_class[2, 2]
+ds[ds$PricePerPerson == 0 & ds$Pclass == "3rd", ]$PricePerPerson <- price_per_class[3, 2]
+```
+
+Con los datos limpios, procedemos a su análisis en el siguiente apartado.
 
 # 4. Análisis de los datos
 
-## 4.1 Selección de los grupos de datos que se quieen analizar / comparar.
-
-Posibles grupos que puedan ser interesantes a la hora de averiguar si la probabilidad de sobrevivir era mucho más alta según el grupo.
+Antes de proceder a ver qué grupos de datos queremos normalizar, vamos a ver qué datos son normales y cuáles no, de manera gráfica...
 
 ```{r}
-  
-# Por clase
+par(mfrow=c(2,2))
+for(i in 1:ncol(ds)) {
+  if (is.numeric(ds[,i])){
+    qqnorm(ds[,i],main = paste("Normal Q-Q Plot for ",colnames(ds)[i]))
+    qqline(ds[,i],col="red")
+    hist(ds[,i], 
+      main=paste("Histogram for ", colnames(ds)[i]), 
+      xlab=colnames(ds)[i], freq = FALSE)
+  }
+}
 
-# Gente que viajaba sola vs gente con familia
 
-# Por sexo
+plot(ds[,c("Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked")])
+```
 
-males_passengers <- ds[ds$Sex == "male",] 
-females_passengers <- ds[ds$Sex == "female",]
+## 4.1 Selección de los grupos de datos que se quieren analizar / comparar.
+
+A continuación, se nombran los distintos grupos de datos que nos parecen interesantes:
+
+- Analizaremos si __los niños__, entendiendo como tales los pasajeros que tenían 16 años o menos, __tuvieron la misma probabilidad de sobrevivir que los adultos o, por el contrario, más__. Compararemos los dos subgrupos de viajeros para responder a la siguientes hipótesis, teniendo __Ps(X) como la probabilidad de supervivencia del subgrupo X__:
+
+$$
+  H_{0} : p_s(children) = p_s(adults)
+$$
+$$
+  H_{1} : p_s(children) > p_s(adults)
+$$
 
 
-# Por edad, niños por debajo de los 16 años
+- Intentaremos __aproximar los datos__ utilizando __un modelo de regresión__. __Partiremos de la edad__, con la que habremos trabajado anteriormente, __y el sexo__, y veremos si podemos incluir una tercera variable que nos permita que mejore el comportamiento de nuestro modelo.
+
+- <<Nos faltan 1>>
+
+
+A continuación, creamos un dataset para los pasajeros que son niños y otro para los adultos. Utilizaremos tales dataset posteriormente para realizar el contraste de hipótesis.
+
+```{r}
 
 children_passengers <- ds[ds$Age <= 16,] 
-not_children__passengers <- ds[ds$Age > 16,] 
-  
+adults_passengers <- ds[ds$Age > 16,] 
 
 ```
 
 ## 4.2. Comprobación de la normalidad y homogeneidad de la varianza
 
-```{r}
+Comprobamos si el atributo Age de los pasajeros, objeto de nuestro análisis, sigue una distribución normal, utilizando el test de Shapiro-Wilk:
 
-#Normalidad para el campo Age
-ks.test(ds$Age, pnorm, mean(ds$Age), sd(ds$Age))
+```{r}
 
 shapiro.test(ds$Age)
 
+```
+
+Obtenemos un __p-palor muy pequeño, menor al nivel de significancia 0.05__, por lo que podemos rechazar la hipótesis nula del test y asumimos que __la variable Age no sigue una distribución normal__.
+
+Dado que la variable Age no sigue una distirbución normal, utilizaremos el __test de Fligner-Killeen__ para comprobar la homocedasticidad de la variable:
+
+```{r}
+fligner.test(Age~Survived, data = ds)
+
+```
+Observamos que dado el p-value obtenido, menor que 0.05, no podemos rechazar la hipótesis nula y concluimos que __la variable Age presenta una distribución homogénea de la varianza__.
+
+Asimismo comprobamos si ambos subgrupos que vamos a comparar tienen la misma varianza:
+```{r}
+
+var.test(children_passengers$Age, adults_passengers$Age)
 
 ```
 
-Nos dan que la edad no sigue una distribucion normal, pero por el teorema del limite central.... podemos suponerlo.
+Por el p-value obtenido, muy pequeño, y el ratio que nos devuelve el test concluimos que __la varianza no es la misma para los dos grupos de supervivientes__ (niños y adultos).
+
+# 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos
+
+## 4.3.1 Supervivencia de niños vs adultos
+
+Aunque la variable Age presente una distribución de la varianza homogénea, no tiene una distribución normal, por lo que no podemos utilizar tests pamétricos para comparar ambos grupos de datos. Utilizaremos pues el __test de Wilcox, no paramétrico, para comprobar si los niños sobrevivieron  más que los adultos__.
+
+```{r}
+  
+  wilcox.test(children_passengers$Age, adults_passengers$Age, alternative = "greater")
+
+
+```
+Como vemos por el p-value con valor 1, el test nos arroja de manera decisiva que __los niños__ (primer grupo) __sobrevivieron mucho más que los adultos__ (segundo grupo).
+
+A modo de comprobación, comprobamos que mediante la utilización del test obtenemos que para la hipotesis nula contraria:
+
+```{r}
+  
+  wilcox.test(children_passengers$Age, adults_passengers$Age, alternative = "less")
+
+
+```
+
+En este caso el test nos arroja un valor p muy pequeño, lo que nos permite rechazar la hipotesis nula, si la hiciesemos, de que los niños sobrevivieron significiamente menos que los adultos.
+
+
+## 4.3.2 Modelo de regresión
+
+Como hemos comentado en el apartado 4.1, comenzaremos a construir nuestro modelo de regresion con los atributos Age y Sex. Dado que la variable __Survived es una variable cualitativa categórica__, utilizamos un __modelo de regresión logística__ en detrimento del lineal, ya que el rendimiento del primero es mejor en este caso.
+
+Procedemos construir este primer modelo y ver cómo se comporta:
 
 ```{r}
 
-library(car)
+model.logist1 = glm(formula = Survived ~ Age + Sex, family=binomial(link=logit), data = ds)
 
-levtest<- function(x, y) {
-  leveneTest(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
-                               data.frame(dv=y, gr='gr2')), center='mean')
-}
-
-flignertest<- function(x, y) {
-  fligner.test(dv~gr, data = rbind(data.frame(dv=x, gr='gr1'),
-                               data.frame(dv=y, gr='gr2')))
-}
-
-levtest(children_passengers$Age, not_children__passengers$Age)
-
-
-flignertest(children_passengers$Age, not_children__passengers$Age)
-
-
-var.test(children_passengers$Age, not_children__passengers$Age)
+summary(model.logist1)
 
 
 ```
 
+Vemos por el estadístico de Wald que la variable __Sex (p-value<0.05) sí es estadísticamente significativa, pero Age (p-value>0.05) no__. Por lo tanto, procedemos a __quitar la variable Age del modelo__.
 
-#4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos
-Ambos grupos no tienen la misma varianza.
+Del ___data screaning___ observamos que el __Pclass parecía tener relación con la supervivencia__, puesto que los pasajeros de primera y segunda clase sobrevivieron mucho más que los de tercera. Procedemos a __incluirlo en el modelo en detrimento del atributo Age__ y vemos también el rendimiento del nuevo modelo:
 
 ```{r}
 
-  #Hay correlacion
+model.logist2.formula = Survived ~ Sex + Pclass
 
-  wilcox.test(Age ~ Survived, data = ds)
+model.logist2 = glm(formula = model.logist2.formula, family=binomial(link=logit), data = ds)
 
-  wilcox.test(Age ~ Survived, data = children_passengers)
-  wilcox.test(Age ~ Survived, data = not_children__passengers)
-  
-  
-  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "two.sided")
-  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "greater")
-  wilcox.test(children_passengers$Age, not_children__passengers$Age, alternative = "less")
-
-  summary(children_passengers)
-  summary(not_children__passengers)
-  
+summary(model.logist2)
 
 ```
 
-Los menores de 16 años tuvieron mucha más oportunidad de salvarse que los mayores de 16 años. La edad es un factor determinante. Pintarlo en el apartado 5.
+Podemos observar que la variable __Pclass es estadísticamente significativa__ y vemos que __el modelo mejora, ya que el Akaike Information Criterion (AIC) es menor que en el primer modelo__ que realizamos.
+
+Probamos a incluir también la variable SibSp en el modelo, ya que de manera intutiva tiene sentido que los hombres que viajasen solos sobreviviesen más que los que viajasen con esposa.
+
+```{r}
+
+model.logist3.formula = Survived ~ Sex + Pclass + SibSp
+
+model.logist3 = glm(formula = model.logist3.formula, family=binomial(link=logit), data = ds)
+
+summary(model.logist3)
+
+
+```
+
+Vemos que __SibSp también es estadísticamente significativa y que mejora un poco el rendimiento del algoritmo__.
+
+Probamos a incorportar del mismo modo la variable Parch:
+
+```{r}
+
+model.logist4 = glm(formula = Survived ~ Sex + Pclass + SibSp + Parch, family=binomial(link=logit), data = ds)
+
+summary(model.logist4)
+
+
+```
+
+Vemos que __la variable Parch no es estadísticamente significativa__, ya que su estadístico de Wald es mayor que 0.05, por lo que __la descartamos__. Comprobamos por último si el precio que pagó cada pasajero por el ticket mejoraría el modelo:
+
+```{r}
+
+model.logist5 = glm(formula = Survived ~ Sex + Pclass + SibSp + PricePerPerson, family=binomial(link=logit), data = ds)
+
+summary(model.logist5)
+
+
+```
+
+Podemos observar que __la variable Fare tampoco es estadísticamente significativa, por lo que también la eliminamos del modelo__.
+
+
+Tras este proceso, podemos concluir que __el mejor modelo logístico que explica la variable Survived es nuestro tercer modelo__, que utiliza Age , Pclass y SibSp para explicar la variable Survived:
+
+$$
+  Survived = exp(3.43 -2.74*Sexmale -0.93*Pclass - 0.24*SibSp)
+$$
+
+# 5. Representación de los resultados a partir de tablas y gráficas
+
+## 5.1 Comparación entre menores de 16 años y mayores de 16 años
+
+En el apartado anterior, hemos visto que __los niños sobrevivieron mucho más que los adultos__. Podemoso __visualizar__ esto de manera gráfica:
+
+```{r}
+
+#Calculamos la media para los dos tipos de pasajeros y lo pintamos en un diagrama de barras
+
+children_passengers$Survived <-as.integer(children_passengers$Survived)
+adults_passengers$Survived <- as.integer(adults_passengers$Survived)
+
+mean_children_passengers <- mean(children_passengers$Survived)
+mean_adults_passengers <- mean(adults_passengers$Survived)
+
+#Print it
+barplot(c(mean_children_passengers, mean_adults_passengers), names =c("Niños", "No niños (>16 años)"), main=("Media de supervivencia de los viajeros"), xlab="Edad")
+```
+
+Podemos ver también __cómo se distribuye la supervivencia, agrupando los pasajeros por edades__:
+
+```{r}
+#Agrupamos por tramos de edad
+ds$AgeGroup <- cut(ds$Age, breaks=c(0,4,8,12,16,20,24,30,40,50,60,70,80))
+
+#Pintamos AgeGroup and Survived
+sumAgeGroup <- summarize( group_by(ds, AgeGroup), n=length(AgeGroup))
+
+
+gAgeGroup1 <- ds %>%
+group_by(Survived, AgeGroup) %>%
+tally() %>%
+group_by(Survived) %>%
+mutate(x = n / sum(n)) %>%
+ggplot() +
+geom_col(aes(
+x = factor(AgeGroup),
+y = x,
+fill = factor(Survived)
+), position = "stack")
+
+grid.arrange(gAgeGroup1, nrow=1)
+```
+
+Puede verse que __para los pasajeros con 16 años o menos la supervivencia es significativamente mayor, con la excepción del rango de edad de 4 a 8 años__. Por lo tanto, la supervivencia de los niños es mayor, pero tiene __más dispersión que la de los adultos__.
+
+## 5.2 Modelo de regresión logística
+
+Vemos los coeficiented del modelo que hemos dado como mejor (el tercero) para ver cómo se comportan las variables que lo explican:
+
+```{r}
+exp(coefficients(model.logist3))
+
+
+##IC 
+exp(confint(model.logist3))
+
+```
+
+La variable Sex tiene un OR de 0.064, la Pclass un OR de 0.39 y la SibSp un 0.78, por lo que a la hora de explicar la variable Survived sorprendentemente tiene mucho más peso la variable SibSp que el sexo o la clase, si bien tiene un Intervalo de Confianza, con una confianza del 95%, más amplio que las otras dos variables.
+
+
+Procedemos a ver cómo se comportaría nuestro modelo de regresión logística a clase y SibSp constante y distinto sexo:
+
+```{r}
+
+#Males
+new_passengers_male <- data.frame(
+  Sex = rep("male", times = 3),
+  Pclass = c("1st","2nd","3rd"),
+  SibSp = c(1,1,1)
+)
+
+#Females
+new_passengers_female <- data.frame(
+  Sex = rep("female", times = 3),
+  Pclass = c("1st","2nd","3rd"),
+  SibSp = c(1,1,1)
+)
+
+prob_males <- predict(model.logist3, newdata = new_passengers_male, type="response")
+
+prob_females <- predict(model.logist3, newdata = new_passengers_female, type="response")
+
+prob_males
+
+prob_females
+
+plot(c(1,2,3), prob_females, type = "b", frame = FALSE, pch = 19, col = "pink", xlab = "Pclass", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1,2,3), prob_males, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Mujeres", "Hombres"), col=c("pink", "blue"), lty = c(1,1), cex=0.8)
+
+
+```
+
+Ahora con clase y SibSps constantes y distinto sexo:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c("1st","1st"),
+  SibSp = c(1,1)
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c("2nd","2nd"),
+  SibSp = c(1,1)
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = c("male", "female"),
+  Pclass = c("3rd","3rd"),
+  SibSp = c(1,1)
+)
+
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
+
+plot(c(1, 2), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "Sex", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1, 2), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1, 2), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+
+```
+
+
+Por último, solamente variaremos el SibSp. En el caso de los hombres:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep("1st", times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep(c("2nd"), times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = rep("male", times = 10),
+  Pclass = rep("3rd", times = 10),
+  SibSp = 1:10
+)
+
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
+
+plot(c(1:10), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "SibSp", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1:10), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1:10), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+```
+
+Y en el de las mujeres:
+
+```{r}
+new_passengers_class_1 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep("1st", times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_2 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep("2nd", times = 10),
+  SibSp = 1:10
+)
+
+new_passengers_class_3 <- data.frame(
+  Sex = rep("female", times = 10),
+  Pclass = rep("3rd", times = 10),
+  SibSp = 1:10
+)
+
+prob_1 <- predict(model.logist3, newdata = new_passengers_class_1, type="response")
+
+prob_2 <- predict(model.logist3, newdata = new_passengers_class_2, type="response")
+
+prob_3 <- predict(model.logist3, newdata = new_passengers_class_3, type="response")
+
+plot(c(1:10), prob_1, type = "b", frame = FALSE, pch = 19, col = "red", xlab = "SibSp", ylab = "prob Survived", ylim = c(0,1))
+
+lines(c(1:10), prob_2, pch = 19, col = "green", type = "b")
+
+lines(c(1:10), prob_3, pch = 19, col = "blue", type = "b")
+
+legend("topright", legend=c(" Primera clase", "Segunda clase", "Tercera clase"), col=c("red", "green", "blue"), lty = c(1,1), cex=0.8)
+
+```
+
+
+Vemos cómo se comporta nuestro modelo: 
+
+```{r}
+
+model=model.logist3
+
+prob=predict(model, ds, type="response")
+
+r=roc(ds$Survived,prob, data=ds)
+
+plot (r)
+
+auc(r)
+
+```
+
+Vemos que el __área bajo la curva es de  0.8328, por lo que la capacidad de predicción de nuestro modelo es bastante buena__. Procedemos a calcular la sensibilidad y la especifidad.
+
+```{r}
+
+calculate_sensibility <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  yes_yes <- confusion_matrix[2,2]
+  yes_no <- confusion_matrix[1,2]
+  
+  sensibility <- yes_yes / (yes_yes + yes_no)
+  
+  return(sensibility)
+}
+
+calculate_specifity <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  no_no <- confusion_matrix[1,1]
+  no_yes <- confusion_matrix[2,1]
+  
+  specifity <- no_no / (no_no + no_yes)
+  
+  return(specifity)
+}
+
+
+calculate_global_accuracy <- function(confusion_matrix){
+  if(ncol(confusion_matrix) != 2) return(0)
+  
+  yes_yes <- confusion_matrix[2,2]
+  yes_no <- confusion_matrix[1,2]
+  no_no <- confusion_matrix[1,1]
+  no_yes <- confusion_matrix[2,1]
+  
+  ok_results <- yes_yes + no_no
+  ko_results <- yes_no + no_yes
+  
+  ok_results / (ok_results + ko_results)
+}
+
+
+calculate_confusion_matrix <- function(model, data, real_values, threshold){
+  predictions <- ifelse(predict(model, newdata = data, type="response")<threshold, "No","Yes")
+  
+  table(real_values, predictions, dnn = c("Valor Real","Valor Predicho"))
+}
+
+```
+
+A continuación, observamos a ver cómo evoluciona la calidad (sensibilidad, especifidad y calidad total) cambiando el umbral según el cual aceptaremos que nuestro modelo predice si un viajero se salvó o no:
+```{r}
+
+calculate_quality_params <- function(model, data, real_values, threshold){
+
+confusion_matrix <- calculate_confusion_matrix(model, data, real_values, threshold)
+
+specifity <- calculate_specifity(confusion_matrix)
+
+sensibility <- calculate_sensibility(confusion_matrix)
+
+global_accuracy <- calculate_global_accuracy(confusion_matrix)
+
+list("threshold" = threshold, "confusion_matrix" = confusion_matrix, "specifity" = specifity, "sensibility" = sensibility, "global accuracy" = global_accuracy)
+}
+
+quality_params_06 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.6)
+
+quality_params_07 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.7)
+
+quality_params_08 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.8)
+
+quality_params_85 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.85)
+
+quality_params_09 <- calculate_quality_params(model.logist3, ds, ds$Survived, 0.9)
+
+quality_params_06
+quality_params_07
+quality_params_08
+quality_params_85
+quality_params_09
+
+```
+
+Vemos que __con un umbral del 0.6, obtenemos una gran sensibilidad (83%) sin comprometer la calidad total (80%)__ por lo que __la calidad de nuestro modelo es bastante aceptable__.
+
+
+# 6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+
+En primer lugar nos hemos preguntado si los niños sobrevivieron más que los adultos, __comparando el atributo Age entre estas dos subpoblaciones__. Si bien la variable Age no sigue una distribución normal y no podemos explicar el comportamiento de la variable Survived a partir de ella, sí __hemos concluído, con un 95% de confianza, que los niños sobrevivieron mucho más que los adultos__. Asimismo, la supervivencia de los niños está mucho más dispersa que la de los adultos.
+
+Posteriormente, hemos construído un modelo de regresión lineal logística que explica la variable Survived con bastante calidad. El modelo es el siguiente:
+
+$$
+  Survived = exp(3.43 -2.74*Sexmale -0.93*Pclass - 0.24*SibSp)
+$$
+A través del modelo mismo y de las gráficas de predicciones del mismo, hemos descubierto que:
+
+- Aunque los niños sobreviviesen mucho más que los adultos, __no podemos establecer un modelo que explique la variable Survived con el atributo Age__.
+
+- En general, __los hombres tienen muchas menos probabilidades de sobrevivir que las mujeres__.
+
+- __La clase también tiene un papel fundamental__. Sin importar esposa o hermanos, __un hombre de tercera clase _a priori_ tiene muy pocas probabilidades de haber sobrevivido__.
+
+- Sorprendentemente, __la variable SibSp es la que más peso tiene__. __A partir de 6 hermanos / esposa un hombre, independientemente de su clase, tiene muy pocas probabilidades de sobrevivir__. Podemos observar también cómo __en las mujeres este efecto es menos acusado__, y que una mujer de primera clase, incluso yendo con muchos hermanos, sí tenía mucha más probabilidad de sobrevivir que un hombre.
+
+
+
+
+
