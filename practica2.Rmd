@@ -13,6 +13,7 @@ library(plyr)
 library(dplyr)
 library(gridExtra)
 library(pROC)
+library(tidyr)
 
 ```
 
@@ -68,7 +69,8 @@ Para más claridad de los datos, procedemos a realizar las __siguientes transfor
 ds$Survived <- factor(ds$Survived, levels=c(0, 1), labels = c("Not", "Yes"))
 
 #Convertimos Embarked a factor con 3 niveles
-ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
+embarked_labels <- c("Cherbourg", "Queenstown", "Southampton")
+ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = embarked_labels)
 
 #Convertimos Sex a factor con 2 niveles, female | male
 ds$Sex <- factor(ds$Sex)
@@ -81,41 +83,42 @@ str(ds)
 
 ```
 
-Para hacernos una idea de las características, vamos a mostrar las estadístcas básicas:
+Para hacernos una idea de las características más importantes de los atributos, vamos a mostrar las estadístcas básicas:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 summary(ds)
 ```
+
 La información más relevante es:
 
 - **Survived**: Hay más gente que falleció que sobrevivió.
-- **Pclass**: Lo más común es tercera clases (Median).
+- **Pclass**: Lo más común es viajeros con billetes de tercera clase.
 - **Sex**: En el barco viajaban el doble de hombres que de mujeres.
-- **age**: especifica la edad en años. Podemos ver que el mínimo es 0.42 años, así que se contemplan bebés.
-La persona más anciana tenía 80 años y la media de edad estaba en torno a los 30 años.
-- **SibSp**: Lo más común es ir sin hermanos ni mujer.
+- **Age**: Especifica la edad en años. Podemos ver que el mínimo es 0.42 años, así que se contemplan bebés. La persona más anciana tenía 80 años y la media de edad estaba en torno a los 30 años. La mitad de los viajeros tenía 28 años o menos.
+- **SibSp**: Lo más común es ir sin hermanos ni mujer, es decir, viajar solo.
 - **Parch**: Es menos común todavía ir con descendientes o ascendientes.
-- **Fare**: La media del precio del billete es 32.2 y la mediana 14. Esto indica que hay mucha disparidad de precios, siendo
-el máximo 512.
+- **Fare**: La media del precio del billete es 32.2 y la mediana 14. Esto indica que hay mucha disparidad de precios, siendo el máximo 512.
 - **Embarked**: La mayoría embarcaron de Southamption, luego de Cherbourg y unos pocos de Queenstown.
 
 Por último, hacemos una inspección visual de los campos que menos sabemos sobre ellos: Ticket y Cabin.
 
 ### 2.1.1 Campo Ticket
 
-La codificación del billete (Ticket) parece que sigue diferentes patrones y además, hay viajeros que comparten
-el ticket ya que si los ordenamos, podemos comprobar que estos se repiten:
+La codificación del billete (Ticket) parece que sigue diferentes patrones y además, __hay viajeros que comparten
+ticket__ ya que si los ordenamos, podemos comprobar que estos se repiten:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Mostramos los 10 primeros tickets según orden
 sort(ds$Ticket)[1:10]
 ```
-Si comprobamos los campos únicos, vemos que pasa de 891 a 681 valores diferentes.
+
+Si comprobamos los campos únicos, vemos que pasa de 891 a 681 valores diferentes, lo que indica que __hay valores de ticket repetidos__:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 length(distinct(ds, Ticket)$Ticket)
 ```
-Además, el que un ticket se repita no depende de su tipo:
 
+Además, el que un ticket se repita no depende de su tipo:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 aux <- count(ds, Ticket)
 aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
@@ -124,7 +127,7 @@ aux[order(aux[,2], decreasing = TRUE), ][1:10, ]
 Suponemos que se puede comprar un mismo billete para varias personas. ¿Compartirán el camarote? ¿Serán familia?
 Veamos los datos de estos 8.
 
-Ticket 1601: Varias personas de origen chino tienen un billete común y, según los datos, no tienen parentesco entre sí.
+**Ticket 1601**: Varias personas de origen chino tienen un billete común y, según los datos, no tienen parentesco entre sí.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 select(ds[ds$Ticket == "1601", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
@@ -178,17 +181,17 @@ select(ds[ds$Ticket == "382652", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Ag
 select(ds[ds$Ticket == "S.O.C. 14879", ], Name, Pclass, Fare, Cabin, Embarked, Sex, Age, SibSp, Parch)
 ```
 
-La exploración del campo Ticket nos revela que los billetes se comparten, este hecho se ha confirmado tras estudiar un poco de historia en Wikipedia (https://en.wikipedia.org/wiki/Passengers_of_the_Titanic). Resulta que el precio típico de los billetes del Titanic era de 7, 13 y desde 30 libras tercera, segunda y primera clase, respectivamente. El precio de los niños de tercera era 3 libras. Por tanto, al menos, para hacer un análisis por persona, habría que:
+La exploración del campo Ticket nos revela que __los billetes se comparten__, este hecho se ha confirmado tras estudiar un poco de historia en Wikipedia (https://en.wikipedia.org/wiki/Passengers_of_the_Titanic). Resulta que __el precio típico de los billetes del Titanic era de 7, 13 y desde 30 libras tercera, segunda y primera clase, respectivamente__. El precio de los niños de tercera era 3 libras. Por tanto, al menos, para hacer un análisis por persona, habría que:
 
-- Adaptar el precio por persona: dividiendo fare por el número de personas que disponen del billete.
-- Un campo nuevo podría indicar con cuántas personas se compartía el billete.
-- Si del nombre nos quedamos con el apellido, podemos analizar también la probabilidad de muerte en función del apellido. ¿Hay apellidos más afortunados que otros o de clases sociales diferentes?
+- Adaptar el __precio por persona__: dividiendo fare por el número de personas que disponen del billete.
+- Un campo nuevo podría indicar con __cuántas personas se compartía el billete__.
+- Si del nombre nos quedamos con el apellido, podemos analizar también la __probabilidad de muerte en función del apellido__. ¿Hay apellidos más afortunados que otros o de clases sociales diferentes?
 
 Por otro lado, al nombre del Ticket no hemos conseguido sacar una relación o significado claro a primera vista.
 
 ### 2.1.1 Campo Cabin
 
-Al igual que con el campo Ticket, se han agrupado y contado los valores del campo Cabin. Como se puede ver en la tabla de abajo, la gran cantidad de registros no contiene el nombre del camarote (687). Los nombres de los camarotes parece que están formados por la letra de la cubierta (A-F) y seguido de un número. La mayoría de los registros corresponden a 1a clase, aunque también hay registros con 2a y 3a. También llama la atención, que recoge más de un camarote.
+Al igual que con el campo Ticket, se han agrupado y contado los valores del campo Cabin. Como se puede ver en la tabla de abajo, __la gran cantidad de registros no contiene el nombre del camarote (687)__. Los nombres de los camarotes parece que están __formados__ por la __letra de la cubierta (A-F) y seguido de un número__. La mayoría de los registros corresponden a 1a clase, aunque también hay registros con 2a y 3a. También llama la atención, que recoge más de un camarote.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 aux <- count(ds, Cabin)
@@ -197,21 +200,22 @@ head(aux[order(aux[,2], decreasing = TRUE), ])
 
 ## 2.2 Selección y creación de características
 
-Como hemos visto en el apartado anterior, tras explorar el campo Ticket, vimos que podíamos crear nuevos campos:
+Como hemos visto en el apartado anterior, tras explorar el campo Ticket, vimos que podíamos __crear nuevos campos__:
 
-- **Surname**: campo del apellido del propietario del billete.
-- **TicketOwners**: número de propietarios de un billete.
-- **PricePerPerson**: precio del billete por persona, ya que Fare contiene el precio del billete total.
+- **Surname**: Campo del apellido del propietario del billete.
+- **TicketOwners**: Número de propietarios de un billete.
+- **PricePerPerson**: Precio del billete por persona, ya que Fare contiene el precio del billete total.
 
-Los nombres están formados primero por el apellido, luego una coma y después el nombre. Para extraer el apellido, simplemente separamos por coma y nos quedamos con la primera parte:
+Los nombres están formados primero por el apellido, luego una coma y después el nombre. __Para extraer el apellido, simplemente separamos por coma y nos quedamos con la primera parte__:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-library(tidyr)
 
 ds <- separate(ds, Name, c("Surname", NA))
+
 head(ds)
 ```
-Luego, obtenemos el número de propietarios por billete (TicketOwners) y con este campo obtenemos el precio por persona (PricePerPerson). Los campos nuevos generados serían:
+
+Luego, obtenemos el __número de propietarios por billete__ (TicketOwners) y con este campo __obtenemos el precio por persona__ (PricePerPerson). Los campos nuevos generados serían:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 aux <- count(ds, Ticket)
@@ -226,6 +230,14 @@ __Los atributos PassengerId, Ticket, Fare y Name no serán objeto de análisis__
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 ds <- subset(ds, select = -c(PassengerId, Ticket, Fare) )
 str(ds)
+```
+
+A continuación, a __salvamos los datos con estas nuevas carácterísticas__ que hemos extraído en un nuevo fichero, que llamaremos __titanic_passangers_with_characteristics.csv__:
+
+```{r}
+
+write.csv(ds,"titanic_passangers_with_characteristics.csv", row.names = TRUE)
+
 ```
 
 # 3. Limpieza de datos
