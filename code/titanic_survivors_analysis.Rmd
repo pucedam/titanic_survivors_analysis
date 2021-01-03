@@ -25,14 +25,10 @@ library(gridExtra)
 library(pROC)
 library(tidyr)
 library(usedist)
-<<<<<<< HEAD:code/titanic_survivors_analysis.Rmd
-
-=======
 library(cluster)
 library(fpc)
 library(factoextra)
 library(NbClust)
->>>>>>> 621cbb9157eeb2f919ae5b17e5356ddb358f670b:practica2.Rmd
 ```
 
 \newpage
@@ -683,16 +679,14 @@ Si analizamos los centroides o individuos más representatitvos de cada grupo, o
 - Los grupos supervivientes son: mujeres jóvenes de primera y más mayoeres de segunda y tercera, y un poco extraño que también se incluyen hombres mayores de segunda clase.
 - Los grupos que no sobreviben son en general los hombres de todas las clases y algunas mujeres y niños pequeños de segunda clase.
 
-<<<<<<< HEAD:code/titanic_survivors_analysis.Rmd
 \newpage
-=======
+
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 aux <- ds
 aux$Cluster = kmedoids.res1$cluster
 aux <- select(aux[kmedoids.res1$medoids, ], Cluster, Sex, Age, Pclass, Survived)
 aux[order(aux$Survived), ]
 ```
->>>>>>> 621cbb9157eeb2f919ae5b17e5356ddb358f670b:practica2.Rmd
 
 # 5. Representación de los resultados a partir de tablas y gráficas
 
