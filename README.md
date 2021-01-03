@@ -22,5 +22,5 @@ El dataset limpio se puede consultar en el siguiente [enlace](https://github.com
 
 ## Licencia
 
-El contenido de este proyecto esta licencia bajo la [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/), 
+El contenido de este proyecto esta licencia bajo la [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0), 
 y el código fuente usadao para mostrar este contenido esta licenciado bajo la  [MIT license](http://opensource.org/licenses/mit-license.php).
