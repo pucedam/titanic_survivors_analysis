@@ -39,34 +39,46 @@ Las variables de las que disponemos, para cada pasajero, son:
 
 # 2. Integración y selección de los datos de interés a analizar.
 
-Los datos a procesar provienen de una única fuente, por ello, no es necesario realizar la fase de integración o
-fusionado de los datos. En este apartado, primero se cargarán los datos y se hará una exploración inicial de los mismos para
-tener una idea más clara de los mismos y, posteriormente, se procede a seleccionar los datos de interés y a generar nuevas
-características que puedan resultar interesantes para el análisis posterior.
+Los datos a procesar provienen de __una única fuente__, por ello, __no es necesario realizar la fase de integración__ o
+fusionado de los datos. En este apartado, primero __se cargarán los datos y se hará una exploración inicial__ de los mismos para
+tener una idea más clara de como se distribuyen y, posteriormente, se procederá a __seleccionar los datos de interés__ y a __generar nuevas
+características__ que puedan resultar interesantes para el análisis posterior.
 
 ## 2.1 Exploración de los datos (screening)
 
-A continuación procedemos a cargar el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
+A continuación, cargamos el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 ds <- read.csv(file = "train.csv", header=TRUE, stringsAsFactors=FALSE)
 str(ds)
 ```
-Como se puede observar, el __dataset__ contiene 891 registros y 12 atributos. Tenemos las variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare, todas tratadas como int o num. También están las variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres. Survived, aun siendo variable cuantitativa, representa 0 (No) y 1 (Yes), por lo que en realidad es una variable cualitativa dicotómica. 
 
-Para más claridad de los datos, procedemos a realizar las siguientes transformaciones:
+Como se puede observar, el ___dataset___ contiene __891 registros y 12 atributos__. Están presentes las __variables cuantitativas PassengerId, Survived, Pclass, Age, SibSp, Parch y Fare__, todas tratadas como __int o num__. También tenemos las __variables cualitativas Ticket, PClass, Sex y  Cabin, cargadas como cadena de caracteres__. __Survived__, aun siendo variable cuantitativa, representa 0 (No) y 1 (Yes), por lo que __en realidad es una variable cualitativa dicotómica__. 
 
-- Transofmramos el campo Survived como uno categórico con dos valores "Yes" y "Not", si el pasajero sobrevivió o no, respectivamente.
-- Transformamos el campo cualitativo categórico Embarked a un factor con 3 posibles valores, cada uno con el nombre del puerto.
-- Transformamos el campo dicotómico Sex en vez de cadena.
-- Transformamos el campos Pclass como un ordinal ya que las clases tienen un orden y le damos los valores: "1st", "2nd", "3rd".
+Para más claridad de los datos, procedemos a realizar las __siguientes transformaciones__:
+
+- Transformamos el campo __Survived__ a uno __categórico__ con __dos valores, "Yes" y "Not"__, representando si el pasajero sobrevivió o no, respectivamente.
+- Transformamos el campo cualitativo categórico __Embarked a un factor con 3 posibles valores__, cada uno con el nombre del puerto.
+- Transformamos el __campo dicotómico Sex a un factor con 2 niveles, en lugar de trabajarlo como cadena de texto__.
+- Transformamos el __campo Pclass__, que se ha cargado como campo cuantitativo, __a un factor con tres niveles, ordenado,__ y le asignamos las etiquetas "1st", "2nd", "3rd".
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#Transformamos Survived a factor
 ds$Survived <- factor(ds$Survived, levels=c(0, 1), labels = c("Not", "Yes"))
+
+#Convertimos Embarked a factor con 3 niveles
 ds$Embarked <- factor(ds$Embarked, levels=sort(c("C", "Q", "S")), labels = c("Cherbourg", "Queenstown", "Southampton"))
+
+#Convertimos Sex a factor con 2 niveles, female | male
 ds$Sex <- factor(ds$Sex)
+
+#Convertimos Pclass a un factor ordenado
 ds$Pclass <- factor(ds$Pclass, ordered=TRUE, levels=c(1, 2, 3), labels=c("1st", "2nd", "3rd"))
+
+#Revisamos como quedan los datos en el dataset
 str(ds)
+
 ```
 
 Para hacernos una idea de las características, vamos a mostrar las estadístcas básicas:
