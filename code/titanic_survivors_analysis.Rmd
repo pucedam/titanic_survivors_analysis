@@ -1039,7 +1039,7 @@ __A través del modelo__ mismo y de las gráficas de predicciones del mismo, hem
 
 # 8. Contribuciones 
 
-```{r include=FALSE}
+```{r}
 
 contributions_table <- tibble::tribble(
                 ~Contribuciones,                                         ~Firma,
