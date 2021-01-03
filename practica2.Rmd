@@ -20,7 +20,7 @@ library(pROC)
 
 Durante esta práctica vamos a tratar el _dataset_ base de la competición [**Titanic - Machine Learning from Disaster**](https://www.kaggle.com/c/titanic/overview). En este conjunto de datos se nos presenta, para cada pasajero del tan famoso trasatlántico, sus datos personales más importantes, así como otros relacionados con su embarque en el Titanic, y si finalmente sobrevivieron al naufragio del mismo.
 
-De este modo, este estudio es interesante dado que examinaremos qué posibles factores pudieron influir en la supervivencia de los pasajeros. Así, podremos, por ejemplo, ver si solamente la clase del billete, el género (mujeres) y la edad (niños) condicionaron que un viajero se salvase tal y como hemos visto en la gran pantalla o bien hubiera habido otros factores que pudieran haber determinado la supervivencia del pasajero, como el número de billete.
+De este modo, este estudio es interesante dado que nos permite analizar cuáles fueron los factores que afectaron a la supervivencia de los pasajeros. Así, podremos, entre otras cosas, ver si solamente la clase del billete, el género y la edad condicionaron que un viajero se salvase tal y como hemos visto en la gran pantalla o bien hubiera habido otros factores que pudieran haber determinado la supervivencia del pasajero, como el número de billete.
 
 Las variables de las que disponemos, para cada pasajero, son:
 
@@ -28,14 +28,14 @@ Las variables de las que disponemos, para cada pasajero, son:
 - **Survived**: Si sobrevivió (1) o no (0).
 - **Pclass**: Clase del pasaje. 
 - **Name**: Nombre del pasajero.
-- **sex**: Sexo del viajero.
+- **Sex**: Sexo del viajero.
 - **Age**: Edad, en años.
-- **SibSp**: Número de hermanos o esposas a bordo del Titanic
-- **Parch**: Número de padres / hijos a bordo del Titanic
-- **ticket**: Número de ticket
-- **fare**: Tarifa del pasaje
-- **cabin**: Número de camarote
-- **embarked**: Puerto desde el que embarcó el pasajero. Las posibles opciones son: Cherbourg(C), Queenstown(Q) o Southampton(s).
+- **SibSp**: Número de hermanos o esposas a bordo del Titanic.
+- **Parch**: Número de padres / hijos a bordo del Titanic.
+- **Ticket**: Número de ticket.
+- **Fare**: Tarifa del pasaje.
+- **Cabin**: Número de camarote.
+- **Embarked**: Puerto desde el que embarcó el pasajero. Las posibles opciones son: Cherbourg (C), Queenstown (Q) o Southampton (S).
 
 # 2. Integración y selección de los datos de interés a analizar.
 
