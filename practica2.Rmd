@@ -239,7 +239,7 @@ ds <- subset(ds, select = -c(PassengerId, Ticket, Fare) )
 str(ds)
 ```
 
-A continuación, a __salvamos los datos con estas nuevas carácterísticas__ que hemos extraído en un nuevo fichero, que llamaremos __titanic_passangers_with_characteristics.csv__:
+A continuación,  __salvamos los datos con estas nuevas carácterísticas__ que hemos extraído en un nuevo fichero, que llamaremos __titanic_passangers_with_characteristics.csv__:
 
 ```{r}
 
@@ -267,19 +267,22 @@ colSums(ds=="")
 
 Vemos que los campos que tienen campos nulos o vacíos son:
 
-- **Age** tiene 177 nulos y su valor debe ser mayor de cero. En este caso, lo ideal sería generar un modelo de regresión que predijese la edad ya que puede depender de la clase, el sexo pero sobre todo de la clase y el precio, ya que los niños pagan menos. Por simplicidad, vamos a hacer la mediana de las edades.
-- **Embarked** tiene 2 valores nulos y cada persona tiene que haber embarcado desde algún puerto. En este caso, con el ticket a lo mejor se podría deducir desde donde se ha embarcado. En este caso, asignaremos el puerto más probable, es decir, desde donde más gente embarcó.
-- **Cabin** tiene 687 valores vacíos y cada persona tiene que dormir en algún camarote. La cantidad de nulos es enorme, sobre todo para los de tercera clase. El camarote exacto no se puede averiguar. En base a la clase, se podría asignar una letra de cubierta. Pero para ello habría que cambiar la variable Cabin por Desk. En este caso, lo que haremos será eliminar la variable.  
+- **Age** tiene __177 valores nulos__ y su valor debe ser mayor de cero. En este caso, lo ideal sería generar un modelo de regresión que predijese la edad ya que puede depender de la clase, el sexo pero sobre todo de la clase y el precio, ya que los niños pagan menos. Por simplicidad, ___vamos __imputamos a estos valores nulos la mediana de las edades__.
+- **Embarked** tiene __2 valores nulos__ y cada persona tiene que haber embarcado desde algún puerto. En este caso, con el ticket a lo mejor se podría deducir desde donde se ha embarcado. En este caso, __asignaremos el puerto más probable__, es decir, __desde donde más gente embarcó__.
+- **Cabin** tiene __687 valores vacíos y cada persona tiene que dormir en algún camarote__. La cantidad de nulos es enorme, sobre todo para los de tercera clase. El camarote exacto no se puede averiguar. En base a la clase, se podría asignar una letra de cubierta. Pero para ello habría que cambiar la variable Cabin por Desk. En este caso, lo que haremos será __eliminar la variable__.  
 
 Como podemos comprobar, ya no hay nulos:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Imputamos la mediana a los valores nulos de Age
 age_median <- median(ds$Age, na.rm = TRUE)
 ds[, 'Age'][is.na(ds[,'Age'])] <- age_median
 
+#Imputamos el puerto de embarque más frecuente al campo Embarked
 embarked_most_frequent <-  levels(ds$Embarked)[which.max(ds$Embarked)]
 ds[, 'Embarked'][is.na(ds[,'Embarked'])] <- embarked_most_frequent
 
+#Eliminamos el atributo Cabin
 ds <- subset(ds, select = -c(Cabin) )
 
 summary(ds)
@@ -288,66 +291,155 @@ summary(ds)
 
 ## 3.2 Identificación y tratamiento de valores extremos.
 
-En este apartado vamos a analizar los valores de los campos numéricos para ver si hay valores que no tienen sentido o resultan extraños, por ejemplo, los valores extremos. Un criterio para identificar los valores extremos son aquellos que se sitúan a 3 veces la desviación estándar de la media. Una herramienta muy útil para identificar dichos valores son las gráficas de caja. Veamos por variables:
+En este apartado vamos a __analizar los valores de los campos numéricos para ver si hay valores que no tienen sentido o resultan extraños__, por ejemplo, los __valores extremos__ o ___outliers___. Un criterio para identificar los valores extremos son __aquellos que se sitúan a 3 veces la desviación estándar de la media o más__. Una herramienta muy útil para identificar dichos valores son las __gráficas de caja__. Veamos por variables:
 
-**Age**: Si hacemos las gráficas por clase, podemos ver que hay valores extremos pero están dentro de un rango de edades
-normal, entre 0.42 y 80. Se puede comprobar cómo, cuanto mejor es la clase, mayor es la edad.
+**Age**: Si hacemos las gráficas por clase, podemos ver que hay __valores extremos pero están dentro de un rango de edades
+normal, entre 0.42 y 80__. Se puede comprobar cómo, __cuanto mejor es la clase, mayor es la edad__.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 gAge1 <- ggplot(ds, aes(x=Pclass, y=Age)) + geom_boxplot()
 gAge1
 ```
-**SibSp** y **Parch**: En ambos casos se presentan outliers porque lo más común es viajar sin familiares y hay casos de 3, 4, 5 y hasta 8 hermanos que para la época no es extraño. Así que los valores para estos campos se consideran correctos.
+
+**SibSp** y **Parch**: En ambos casos se presentan ___outliers___ porque __lo más común es viajar sin familiares y hay casos de 3, 4, 5 y hasta 8 hermanos, lo cual no es extraño en aquella época__. Así que __los valores__ para estos campos __se consideran correctos__.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 gSibSp <- ggplot(ds, aes(x=Pclass, y=SibSp)) + geom_boxplot()
 gParch <- ggplot(ds, aes(x=Pclass, y=Parch)) + geom_boxplot()
 grid.arrange(gSibSp,gParch,nrow=1)
 ```
-**TicketOwners** y **PricePerPerson**: Para la tercera y segunda clase, lo más común es viajar sólo y en primera es viajar con un acompañante. El número de personas máximo que comparten billete es 8 pero es normal si se considera que había alguna familiar con hasta 8 hermanos. Los datos son consistentes. Si vemos los precios por clase, vemos cómo son cada vez más elevados en función de la clase. Vemos outliers para tercera y segunda, por ejemplo billestes de tercera que cuestan 20 libras no debe estar bien. En cambio, para primera clase, no es raro que haya outliers, ya que el lujo nunca tiene techo. Según las investigaciones, hubo pasajeros de primera clase que llegaron a pagar más de 1000 libras.
+
+**TicketOwners** y **PricePerPerson**: Para __la tercera y segunda clase, lo más común es viajar sólo__ y __en primera__ es viajar __con un acompañante__. El __número de personas máximo que comparten billete es 8__ pero es normal si se considera que había alguna familiar con hasta 8 hermanos. Los datos son consistentes. Si vemos __los precios__ por clase, vemos cómo son cada vez __más elevados en función de la clase__. Vemos __outliers para tercera y segunda__, por ejemplo, no es correcto que billetes de tercera clase cuestan 20 libras. En cambio, para primera clase, no es raro que haya outliers, ya que el lujo nunca tiene techo. Según las investigaciones, hubo pasajeros de primera clase que llegaron a pagar más de 1000 libras.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 gTicketOwners <- ggplot(ds, aes(x=Pclass, y=TicketOwners)) + geom_boxplot()
 gPricePerPerson <- ggplot(ds, aes(x=Pclass, y=PricePerPerson)) + geom_boxplot()
 grid.arrange(gTicketOwners,gPricePerPerson,nrow=1)
 ```
-En este caso, lo que vamos a tratar, son aquellos casos en el que el precio del billete por persona es cero, ya que eso no puede ser a menos que la persona sea de la tripulación pero suponemos que son todo pasajeros. Por tanto, lo que haremos será reemplazar todos los valores 0 del campo PricePerPerson, por la mediana de dicho precio en función de a la clase que pertenezca el pasajero.
+En este caso, lo que vamos a tratar, son __aquellos casos en el que el precio del billete por persona es cero__, ya que eso __no puede darse__ a menos que la persona sea de la tripulación pero suponemos que son __todos pasajeros__. Por tanto, lo que haremos será __reemplazar todos los valores 0 del campo PricePerPerson, por la mediana__ de dicho precio en función de a la clase que pertenezca el pasajero. Nótese que esta casuística no se localizó en el apartado anterior, que trataba de valores nulos, debido a que el campo vale cero y no NA en este caso.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 price_per_class <- aggregate(ds$PricePerPerson,         # Median by group
           list(ds$Pclass),
           median)
 colnames(price_per_class) <- c("Pclass", "PricePerPerson")
+
+#Mostramos la mediana por clases
 price_per_class
 ```
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+#Sustituimos los valores con las medianas
 ds[ds$PricePerPerson == 0 & ds$Pclass == "1st", ]$PricePerPerson <- price_per_class[1, 2]
 ds[ds$PricePerPerson == 0 & ds$Pclass == "2nd", ]$PricePerPerson <- price_per_class[2, 2]
 ds[ds$PricePerPerson == 0 & ds$Pclass == "3rd", ]$PricePerPerson <- price_per_class[3, 2]
 ```
 
-Con los datos limpios, procedemos a su análisis en el siguiente apartado.
+Con los datos limpios, procedemos a su guardado en el fichero __titanic_passangers_processed.csv__ y a realizar el análisis en el siguiente apartado.
+
+```{r}
+
+write.csv(ds,"titanic_passangers_processed.csv", row.names = TRUE)
+
+```
 
 # 4. Análisis de los datos
 
-Antes de proceder a ver qué grupos de datos queremos normalizar, vamos a ver qué datos son normales y cuáles no, de manera gráfica...
+De manera previa a analizar los datos, __analizamos de manera visual la normalidad__ de los mismos, para tener una idea más clara si cabe de cómo se distribuyen los distintos atributos. Asimismo, mostraremos, para cada atributo, el histograma.
 
 ```{r}
 par(mfrow=c(2,2))
 for(i in 1:ncol(ds)) {
   if (is.numeric(ds[,i])){
-    qqnorm(ds[,i],main = paste("Normal Q-Q Plot for ",colnames(ds)[i]))
+    qqnorm(ds[,i],main = paste("Gráfico Q-Q de normalidad ",colnames(ds)[i]))
     qqline(ds[,i],col="red")
     hist(ds[,i], 
-      main=paste("Histogram for ", colnames(ds)[i]), 
+      main=paste("Histograma de ", colnames(ds)[i]), 
       xlab=colnames(ds)[i], freq = FALSE)
   }
 }
 
 
+```
+
+De estos gráficos extraemos que:
+
+- La variable __Age__ presenta una __distribución normal__, con pico en 28 años (mediana).
+
+- El __resto de atributos no presenta una distribución normal__. 
+
+- Como hemos mencionado en apartados anteriores, __lo más común era viajar solo__. Asimismo, el precio por persona -PricePerPerson- presenta una distribución asimétrica con cola a la derecha. 
+
+
+Además, dibujamos estos campos cuantitativos para __ver si podemos establecer alguna correlación entre ellos__ a simple vista:
+```{r}
 plot(ds[,c("Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked")])
 ```
+Vemos que aparentemente no hay relaciones lineales entre estos atributos.
+
+
+Visualizamos también __las variables cuantitativas__:
+
+```{r}
+
+#Visualizacion de variables cuantitativas
+
+#PClass and Survived
+sumPClass <- summarize( group_by(ds, Pclass), n=length(Pclass), Survived=mean(Survived))
+gPClass1 <- ggplot( sumPClass, aes(x="", y=n, fill=Pclass)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("PClass")
+gPClass2 <- ds %>%
+  group_by(Survived, Pclass) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Pclass),
+      y = x,
+      fill = factor(Survived)
+      ), position = "stack")
+
+#Sex and Survived
+sumSex <- summarize( group_by(ds, Sex), n=length(Sex), Survived=mean(Survived))
+gSex1 <- ggplot( sumSex, aes(x="", y=n, fill=Sex)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("Sex")
+gSex2 <- ds %>%
+  group_by(Survived, Sex) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Survived),
+      y = x,
+      fill = factor(Sex)
+      ), position = "stack")
+#Embarked and Survived
+sumEmbarked <- summarize( group_by(ds, Embarked), n=length(Embarked))
+gEmbarked1 <- ggplot( sumEmbarked, aes(x="", y=n, fill=Embarked)) +
+geom_bar(width = 1, stat = "identity") +
+coord_polar("y", start=0) + ggtitle("Embarked")
+gEmbarked2 <- ds %>%
+  group_by(Survived, Embarked) %>%
+  tally() %>%
+  group_by(Survived) %>%
+  mutate(x = n / sum(n)) %>%
+  ggplot() +
+    geom_col(aes(
+      x = factor(Embarked),
+      y = x,
+      fill = factor(Survived)
+      ), position = "stack")
+
+grid.arrange(gPClass1,gPClass2, gSex1, gSex2, gEmbarked1, gEmbarked2, ncol=2)
+
+```
+
+Podemos observar que __los pasajeros de primera y segunda clase sobrevivieron mucho más que los de tercera__. Asimismo, __una gran proporción de las mujeres se salvó, frente a la pequeña parte de los varones__. Además, aparentemente __los embarcados en Cherbourg sobrevivieron más__ que los embarcados en los otros dos puertos.
 
 ## 4.1 Selección de los grupos de datos que se quieren analizar / comparar.
 
