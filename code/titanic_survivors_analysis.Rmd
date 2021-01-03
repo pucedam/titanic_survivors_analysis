@@ -1,7 +1,14 @@
 ---
-title: "Práctica 2: Limpieza y análisis de datos"
-author: "Pedro Uceda Martínez, Pablo Campillo Sánchez"
+title: "Análisis de los supervivientes del Titanic."
+author: 
+- "Pedro Uceda Martínez"
+- "Pablo Campillo Sánchez"
 date: '`r format(Sys.Date(),"%e de %B, %Y")`'
+abstract: |
+  Mediante este documento se desarrolla la __Práctica 2: Limpieza y análisis de datos__ de la asignatura de __Tipología y Ciclo de Vida de los Datos__ del __Máster Universitario en Ciencia de Datos__ de la __Universidad Oberta de Catalunya__.
+
+Práctica 2: Limpieza y análisis de datos. 
+
 output: pdf_document
 ---
 
@@ -55,7 +62,7 @@ características__ que puedan resultar interesantes para el análisis posterior.
 A continuación, cargamos el __dataset__, sin __factors__, para evitar tratar los nombres de los pasajeros como tales.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-ds <- read.csv(file = "train.csv", header=TRUE, stringsAsFactors=FALSE)
+ds <- read.csv(file = "../data/titanic_survivors.csv", header=TRUE, stringsAsFactors=FALSE)
 str(ds)
 ```
 
@@ -237,11 +244,11 @@ ds <- subset(ds, select = -c(PassengerId, Ticket, Fare) )
 str(ds)
 ```
 
-A continuación,  __salvamos los datos con estas nuevas carácterísticas__ que hemos extraído en un nuevo fichero, que llamaremos __titanic_passangers_with_characteristics.csv__:
+A continuación,  __salvamos los datos con estas nuevas carácterísticas__ que hemos extraído en un nuevo fichero, que llamaremos __data/titanic_survivors_with_characteristics.csv__:
 
 ```{r}
 
-write.csv(ds,"titanic_passangers_with_characteristics.csv", row.names = TRUE)
+write.csv(ds,"../data/titanic_survivors_with_characteristics.csv", row.names = TRUE)
 
 ```
 
@@ -337,10 +344,10 @@ ds[ds$PricePerPerson == 0 & ds$Pclass == "3rd", ]$PricePerPerson <- price_per_cl
 ```
 
 Con los datos limpios, procedemos a su guardado en el fichero __titanic_passangers_processed.csv__ y a realizar el análisis en el siguiente apartado.
-
+ 
 ```{r}
 
-write.csv(ds,"titanic_passangers_processed.csv", row.names = TRUE)
+write.csv(ds,"../data/titanic_survivors_processed.csv", row.names = TRUE)
 
 ```
 
