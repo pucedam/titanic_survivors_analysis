@@ -7,6 +7,15 @@
 - Pablo Campillo Sánchez, pablocampillo@uoc.edu 
 - Pedro Uceda Martínez, pucedam@uoc.edu
 
+## Contenido
+- code/
+  - titanic_survivors_analysis.Rmd: código fuente en R y documentación en Markdown.
+  - titanic_survivors_analysis.pdf: código y documentación en formato pdf (memoria).
+- data/
+  - titanic_survivors.csv: fichero de entrada a analizar con el conjunto de datos original.
+  - titanic_survivors_with_characteristics.csv: fichero con el conjunto de datos tras la selección y generación de características.
+  - titanic_survivors_processed.csv: fichero con el conjunto de datos tras su limpieza.
+
 ## Acerca de este software
 
 * Este software es parte de la Práctica 2 de la asignatura: "Tipologia y ciclo de vida de los datos".

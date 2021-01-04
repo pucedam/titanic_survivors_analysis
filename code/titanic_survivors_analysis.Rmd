@@ -62,7 +62,7 @@ Las variables de las que disponemos, para cada pasajero, son:
 
 Los datos a procesar provienen de __una única fuente__, por ello, __no es necesario realizar la fase de integración__ o
 fusionado de los datos. En este apartado, primero __se cargarán los datos y se hará una exploración inicial__ de los mismos para
-tener una idea más clara de como se distribuyen y, posteriormente, se procederá a __seleccionar los datos de interés__ y a __generar nuevas
+tener una idea más clara de cómo se distribuyen y, posteriormente, se procederá a __seleccionar los datos de interés__ y a __generar nuevas
 características__ que puedan resultar interesantes para el análisis posterior.
 
 ## 2.1 Exploración de los datos (screening)
@@ -282,7 +282,7 @@ colSums(ds=="")
 
 Vemos que los campos que tienen campos nulos o vacíos son:
 
-- **Age** tiene __177 valores nulos__ y su valor debe ser mayor de cero. En este caso, lo ideal sería generar un modelo de regresión que predijese la edad ya que puede depender de la clase, el sexo pero sobre todo de la clase y el precio, ya que los niños pagan menos. Por simplicidad, ___vamos __imputamos a estos valores nulos la mediana de las edades__.
+- **Age** tiene __177 valores nulos__ y su valor debe ser mayor de cero. En este caso, lo ideal sería generar un modelo de regresión que predijese la edad ya que puede depender de la clase, el sexo pero sobre todo de la clase y el precio, ya que los niños pagan menos. Por simplicidad, __imputamos a estos valores nulos la mediana de las edades__.
 - **Embarked** tiene __2 valores nulos__ y cada persona tiene que haber embarcado desde algún puerto. En este caso, con el ticket a lo mejor se podría deducir desde donde se ha embarcado. En este caso, __asignaremos el puerto más probable__, es decir, __desde donde más gente embarcó__.
 - **Cabin** tiene __687 valores vacíos y cada persona tiene que dormir en algún camarote__. La cantidad de nulos es enorme, sobre todo para los de tercera clase. El camarote exacto no se puede averiguar. En base a la clase, se podría asignar una letra de cubierta. Pero para ello habría que cambiar la variable Cabin por Desk. En este caso, lo que haremos será __eliminar la variable__.  
 
@@ -474,9 +474,7 @@ $$
 
 - Intentaremos __aproximar los datos__ utilizando __un modelo de regresión__. __Partiremos de la edad__, con la que habremos trabajado anteriormente, __y el sexo__, y veremos si podemos incluir una tercera variable que nos permita que mejore el comportamiento de nuestro modelo
 
-- Haremos un __análisis de correlación__ de los datos con la variable objetivo. ¿Cuanto más cuesta el billete hay más probabilidades de sobrevivir?
-
-- Por último, realizaremos un __modelo no supervisado jerárquico__ para ver cómo afectan cada variable a la supervivencia de los pasajeros.
+- Por último, realizaremos un __modelo no supervisado__ para ver cómo afectan cada variable a la supervivencia de los pasajeros.
 
 
 A continuación, creamos un dataset para los pasajeros que son niños y otro para los adultos. Utilizaremos tales dataset posteriormente para realizar el contraste de hipótesis del primer caso.
@@ -1005,6 +1003,32 @@ quality_params_09
 ```
 
 Vemos que __con un umbral del 0.6, obtenemos una gran sensibilidad (83%) sin comprometer la calidad total (80%)__ por lo que __la calidad de nuestro modelo es bastante aceptable__.
+
+## 5.3 Modelo no supervisado
+
+Se han aplicando dos métodos (__silhouette__ y __wss__) basados en el codo para elegir un número de agrupaciones y ambos coinciden en 9.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+fviz_nbclust(as.matrix(distance_matrix), pam, method = "silhouette") +
+  labs(subtitle = "Elbow method")
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+fviz_nbclust(as.matrix(distance_matrix), pam, method = "wss") +
+    geom_vline(xintercept = 2, linetype = 2)+ geom_vline(xintercept = 9, linetype = 2)+
+  labs(subtitle = "Elbow method")
+```
+
+Los cuales no proporcionan agrupaciones bien diferenciadas de individuos que sobreviven y que no lo hacen:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+kmedoids.res1 <- pam(distance_matrix, 9)
+table(ds$Survived, kmedoids.res1$cluster)
+```
+
 
 \newpage
 
