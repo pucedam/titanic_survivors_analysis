@@ -636,9 +636,9 @@ Las variables disponibles son:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 colnames(ds)
 ```
-Pero vamos a centrarnos en las más importantes: "Sex", "Age", "Pclass" y "Survived".
+Pero vamos a centrarnos en __las propiedades más importantes: "Sex", "Age", "Pclass" y "Survived"__.
 
-Primero calculamos la matriz de distancia normalizando con minMax y haciendo distancia de Mahalanobis.
+Primero calculamos la __matriz de distancia__ normalizando con minMax y haciendo distancia de Mahalanobis.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -650,7 +650,7 @@ distance <- function (v1, v2) (as.integer(v1$Survived != v2$Survived) + as.integ
 distance_matrix <- dist_make(ds, distance)
 ```
 
-Ahora vamos a utilizar la matriz de distancia para generar las agrupaciones. El método que se va a emplear es el k-medoids ya que no tiene sentido hacer medias con registros categóricos y, por ello, se ha dado una matriz de distancias a medida. Hemos utilizado la función fviz_nbclust que imprime el utilizando varios métodos cómo evoluciona una métrica conforme se va ampliando el número de clusters. La técnica del codo consiste en seleccionar aquel cluster en el que la ganancia de información se estabiliza. Hemos empleado dos métodos:
+Ahora vamos a utilizar la matriz de distancia para __generar las agrupaciones__. El método que se va a emplear es el __k-medoids__ ya que no tiene sentido hacer medias con registros categóricos y, por ello, se ha dado una matriz de distancias a medida. Hemos utilizado la función fviz_nbclust que imprime el utilizando varios métodos cómo evoluciona una métrica conforme se va ampliando el número de clusters. La __técnica del codo consiste en seleccionar aquel cluster en el que la ganancia de información se estabiliza__. Hemos empleado __dos métodos__:
 
 - __silhouette__ que directamente da el número k de agrupaciones óptimo, en este caso 9.
 - __wss__ que no lo da, pero que coincide a simple vista con el anterior.
@@ -669,17 +669,17 @@ fviz_nbclust(as.matrix(distance_matrix), pam, method = "wss") +
   labs(subtitle = "Elbow method")
 ```
 
-Si vemos el número de individuos por cada cluster diferenciando aquellos que sobreviven de los que no, podemos comprobar que están perfectamente delimitados. Sólo hay unos pocos casos para el grupo 1 y el 9:
+Si vemos el número de individuos por cada __cluster diferenciando aquellos que sobreviven de los que no__, podemos comprobar que están __perfectamente delimitados__. Sólo hay unos pocos casos para el grupo 1 y el 9:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 kmedoids.res1 <- pam(distance_matrix, 9)
 table(ds$Survived, kmedoids.res1$cluster)
 ```
-Si analizamos los centroides o individuos más representatitvos de cada grupo, obtenemos las siguientes conclusiones:
+Si analizamos los centroides o __individuos más representatitvos de cada grupo__, obtenemos las siguientes conclusiones:
 
-- Los grupos supervivientes son: mujeres jóvenes de primera y más mayoeres de segunda y tercera, y un poco extraño que también se incluyen hombres mayores de segunda clase.
-- Los grupos que no sobreviben son en general los hombres de todas las clases y algunas mujeres y niños pequeños de segunda clase.
+- Los grupos __supervivientes__ son: __mujeres jóvenes de primera y más mayores de segunda y tercera__, y, aún pareciendo un poco extraño, también se incluyen __hombres mayores de segunda clase__.
+- Los grupos que __no sobreviven__ son en __general los hombres de todas las clases__ y __algunas mujeres y niños pequeños de segunda clase__.
 
 \newpage
 
@@ -1027,6 +1027,11 @@ __A través del modelo__ mismo y de las gráficas de predicciones del mismo, hem
 - __La clase también tiene un papel fundamental__. Sin importar si viajaba con su esposa o hermanos, __un hombre de tercera clase _a priori_ tiene muy pocas probabilidades de haber sobrevivido__.
 
 - La variable SibSp, que explica __el número de acompañantes__ de un viajero, __tiene un peso significativo en la supervivencia del pasajero__. __A partir de 6 acompañantes, un hombre, independientemente de su clase, tiene muy pocas probabilidades de sobrevivir__. Podemos observar también cómo __en las mujeres este efecto es menos acusado__, y que una mujer de primera clase, incluso yendo con muchos hermanos, sí tenía mucha más probabilidad de sobrevivir que un hombre.
+
+
+Por último, también hemos __separado en clusters__ la población de viajeros del Titanic, obteniendo __9 grupos bien diferenciados__ en los que prácticamente todos los componentes sobrevivían o no. Esto nos ha ayudado a __profundizar__ en el conocimiento de __qué tipo de pasajeros sobrevivió o no__, de modo que hemos podido conocer también que las __mujeres que sobrevivían eran especialmente las jóvenes de primera clase y las no tan jóvenes de segunda y tercera además de los hombres mayores de segunda clase__. Asimismo, hemos podido confirmar, una vez más, como ya sabíamos por el modelo, que __por lo general los hombres sobrevivían muchísimo menos__ (aunque no todos murieron) y, __adicionalmente, hemos llegado a conocer que en algunos casos también fallecían mujeres y niños de segunda clase__.
+
+
 
 \newpage
 
